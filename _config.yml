@@ -69,7 +69,7 @@ pagination:
   enabled: true
 
 # Comments
-disqus_shortname:  # put your disqus shortname
+disqus_shortname: ragav  # put your disqus shortname
 
 # -----------------------------------------------------------------------------
 # Collections
@@ -81,9 +81,9 @@ collections:
       layout: post
     output: true
     permalink: /news/:path/
-  research:
-    output: true
-    permalink: /research/:path/
+  # projects:
+  #   output: true
+  #   permalink: /projects/:path/
 
 news_limit: 100000
 
