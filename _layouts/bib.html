@@ -21,7 +21,7 @@
         {% for author in entry.author_array %}
           {% if forloop.length == 1 %}
             {% if author.last == site.scholar.last_name %}
-              <b>{{author.first}} {{author.last}}</b>
+              <em>{{author.first}} {{author.last}}</em>
             {% else %}
               {{author.first}} {{author.last}}
             {% endif %}

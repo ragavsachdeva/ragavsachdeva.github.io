@@ -57,7 +57,7 @@ google_analytics: UA-XXXXXXXXX # out your google-analytics code
 # -----------------------------------------------------------------------------
 
 blog_name: Eli18  # your blog must have a name for it to show up in the nav bar
-blog_description: Explain Like I'm Eighteen
+blog_description:
 permalink: /blog/:year/:title/
 
 # Pagination

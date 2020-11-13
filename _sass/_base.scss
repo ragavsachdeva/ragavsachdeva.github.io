@@ -2,6 +2,14 @@
  * Styles for the base elements of the theme.
  ******************************************************************************/
 
+ * {
+  font-family: 'Work Sans', sans-serif;
+}
+
+html {
+  font-size: 115%;
+}
+
 // Typography
 
 a, table.table a {
@@ -157,6 +165,7 @@ a, table.table a {
 }
 
 .news table th {
+  width: 15%;
   color: var(--global-text-color);
 }
 
@@ -211,7 +220,7 @@ footer.sticky-bottom {
   border-bottom: 1px solid $grey-color-light;
   text-align: center;
   padding-top: 2rem;
-  padding-bottom: 5rem;
+  padding-bottom: 3rem;
   h1 {
     color: var(--global-theme-color);
     font-size: 5rem;
@@ -223,7 +232,7 @@ footer.sticky-bottom {
   margin-bottom: 40px;
   padding: 0;
   li {
-    border-bottom: 1px solid $grey-color-light;
+    // border-bottom: 1px solid $grey-color-light;
     list-style: none;
     padding-top: 2rem;
     padding-bottom: 2rem;
@@ -353,7 +362,13 @@ footer.sticky-bottom {
       .title {
         font-weight: bolder;
       }
+
+      .periodical {
+        font-size: 0.9em;
+      }
+
       .author {
+        font-size: 0.9em;
         a {
           border-bottom: 1px dashed var(--global-theme-color);
           &:hover {
