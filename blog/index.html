@@ -1,5 +1,6 @@
 ---
-layout: default
+layout: page
+title: eli18
 pagination:
   enabled: true
   collection: posts
@@ -12,20 +13,22 @@ pagination:
     after: 3  # The number of links after the current page
 ---
 
+sometimes words come out of my hands
+
 <div class="post">
 
-  <div class="header-bar">
+  {% comment %} <div class="header-bar">
     <h1>{{ site.blog_name }}</h1>
     <h2>{{ site.blog_description }}</h2>
-  </div>
+  </div> {% endcomment %}
 
 
   <ul class="post-list">
     {% for post in paginator.posts %}
       <li>
-        <h3><a class="post-title" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a></h3>
+        <h4><a class="post-title" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a></h4>
         <p class="post-meta">{{ post.date | date: '%B %-d, %Y' }}</p>
-        <p>{{ post.description }}</p>
+        <p style="padding-top: 1rem">{{ post.description }}</p>
       </li>
     {% endfor %}
   </ul>

@@ -228,14 +228,15 @@ footer.sticky-bottom {
 }
 
 .post-list {
-  margin: 0;
+  border-top: 1px solid $grey-color-light;
+  margin-top: 2rem;
   margin-bottom: 40px;
   padding: 0;
   li {
     // border-bottom: 1px solid $grey-color-light;
     list-style: none;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
     .post-meta {
       color: $grey-color;
       font-size: 0.875rem;

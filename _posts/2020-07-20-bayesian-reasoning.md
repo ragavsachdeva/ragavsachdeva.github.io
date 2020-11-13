@@ -2,7 +2,7 @@
 layout: post
 title:  Bayesian Reasoning
 date: 2020-07-20
-description:
+description: Let me start by painting a picture. You wake up one fine morning feeling a bit sick. If you’re like me, you’d normally ignore it – hoping that you’ll get better soon enough. However, it’s 2020 and everything is unreal, so you decide to ...
 ---
 
 Let me start by painting a picture. You wake up one fine morning feeling a bit sick. If you’re like me, you’d normally ignore it – hoping that you’ll get better soon enough. However, [it’s 2020 and everything is unreal](https://en.wikipedia.org/wiki/2020){:target="\_blank"}, so you decide to pay the doctor a visit (y’know, just in case). The doctor isn’t quite sure what’s wrong with you either and runs an assortment of tests. To your dismay, it turns out you tested positive for a very rare and deleterious condition called _Disease X_ ([of course it had to be ‘X’](https://www.psychologytoday.com/au/blog/evolution-the-self/201603/whats-so-fascinating-about-the-letter-x){:target="\_blank"}). You are absolutely devastated; I didn’t say I’d paint a _pretty_ picture, did I?
