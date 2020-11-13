@@ -1,7 +1,7 @@
 ---
 layout: post
-date: 2015-10-22
+date: 2019-04-16
 inline: true
 ---
 
-A simple inline announcement.
+Awarded the Executive Dean’s Award for Academic Excellence, 2018.

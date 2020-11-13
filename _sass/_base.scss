@@ -5,7 +5,7 @@
 // Typography
 
 a, table.table a {
-  color: var(--global-theme-color);
+  color: var(--global-link-color);
   &:hover {
     color: var(--global-theme-color);
     text-decoration: underline;
@@ -259,6 +259,24 @@ footer.sticky-bottom {
   }
 }
 
+// research
+
+.research {
+  .grid-item {
+    width: 250px;
+    margin-bottom: 10px;
+    a {
+      color: black;
+      text-decoration: none;
+      &:hover {
+        color: var(--global-theme-color);
+      }
+    }
+  }
+  .card img {
+    width: 100%;
+  }
+}
 
 // Projects
 

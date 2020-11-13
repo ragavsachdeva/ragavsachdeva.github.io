@@ -1,7 +1,7 @@
 ---
 layout: post
-date: 2015-10-22
+date: 2017-02-28
 inline: true
 ---
 
-A simple inline announcement.
+Awarded the Adelaide Access Scholarship.

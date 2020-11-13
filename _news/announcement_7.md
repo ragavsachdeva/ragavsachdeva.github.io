@@ -1,7 +1,7 @@
 ---
 layout: post
-date: 2015-10-22
+date: 2019-11-01
 inline: true
 ---
 
-A simple inline announcement.
+Did a SWE internship at Microsoft, Redmond.

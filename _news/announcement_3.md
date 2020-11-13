@@ -1,7 +1,7 @@
 ---
 layout: post
-date: 2015-10-22
+date: 2017-10-23
 inline: true
 ---
 
-A simple inline announcement.
+Founded the [UofA Competitive Programming Club](https://www.facebook.com/groups/uoacpc){:target="\_blank"}.

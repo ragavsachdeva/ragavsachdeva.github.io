@@ -81,11 +81,11 @@ collections:
       layout: post
     output: true
     permalink: /news/:path/
-  projects:
+  research:
     output: true
-    permalink: /projects/:path/
+    permalink: /research/:path/
 
-news_limit: 5
+news_limit: 100000
 
 # -----------------------------------------------------------------------------
 # Jekyll settings

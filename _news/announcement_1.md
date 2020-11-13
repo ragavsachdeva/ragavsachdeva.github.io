@@ -1,7 +1,7 @@
 ---
 layout: post
-date: 2015-10-22
+date: 2017-02-27
 inline: true
 ---
 
-A simple inline announcement.
+Enrolled into [Bachelor of Computer Science (Advanced)](https://www.adelaide.edu.au/degree-finder/bcmsa_bcmpscadv.html){:target="\_blank"} at the University of Adelaide.
