@@ -28,8 +28,8 @@ footer_fixed: true
 # Display links to the page with a preview object on social media.
 # To achieve this, change serve_og_meta to true and then provide the URL of the
 # preview image as the value of og_image.
-serve_og_meta: false # Include Open Graph meta tags in the HTML head
-og_image: # The site-wide (default for all links) Open Graph preview image
+serve_og_meta: True # Include Open Graph meta tags in the HTML head
+og_image: /assets/img/prof_pic.svg # The site-wide (default for all links) Open Graph preview image
 
 # -----------------------------------------------------------------------------
 # Social integration
