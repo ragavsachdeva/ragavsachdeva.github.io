@@ -272,25 +272,6 @@ footer.sticky-bottom {
   }
 }
 
-// research
-
-.research {
-  .grid-item {
-    width: 250px;
-    margin-bottom: 10px;
-    a {
-      color: black;
-      text-decoration: none;
-      &:hover {
-        color: var(--global-theme-color);
-      }
-    }
-  }
-  .card img {
-    width: 100%;
-  }
-}
-
 // Projects
 
 .projects {

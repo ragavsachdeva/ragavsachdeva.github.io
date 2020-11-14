@@ -79,7 +79,7 @@ collections:
     permalink: /news/:path/
   research:
     output: true
-    permalink: /research/:title/
+    permalink: /research/:year/:title/
 
 news_limit: 100000
 
