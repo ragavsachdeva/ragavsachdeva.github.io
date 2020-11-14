@@ -65,7 +65,7 @@ pagination:
   enabled: true
 
 # Comments
-disqus_shortname: ragav  # put your disqus shortname
+disqus_shortname:  # put your disqus shortname
 
 # -----------------------------------------------------------------------------
 # Collections

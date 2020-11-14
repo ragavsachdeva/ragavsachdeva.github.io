@@ -1,6 +1,6 @@
 ---
 layout: distill
-title: "EvidentialMix"
+title: EvidentialMix
 description: Learning with Combined Open-set and Closed-set Noisy Labels
 date: 2020-11-14
 

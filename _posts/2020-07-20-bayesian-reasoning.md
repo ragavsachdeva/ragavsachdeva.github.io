@@ -68,6 +68,6 @@ Bayesian reasoning is such a powerful concept and we [intuitively tend to use it
     </div>
 </div>
 
-As a matter of fact, I already have. The calculations that we did above to compute probability of you having Disease X given that you tested positive implicitly made use of the Bayes’ Theorem. All that’s left is to establish some notations. I highly recommend watching [this video by 3Blue1Brown](https://www.youtube.com/watch?v=HZGCoVF3YvM){:target="\_blank"} if you're interested to learn more.
+As a matter of fact, I already have. The calculations that we did above to compute probability of you having Disease X given that you tested positive implicitly made use of the Bayes’ Theorem. All that’s left is to establish some notations. I highly recommend watching [this video by 3Blue1Brown](https://www.youtube.com/watch?v=HZGCoVF3YvM){:target="\_blank"} if you're interested in learning more.
 
 Until next time!
