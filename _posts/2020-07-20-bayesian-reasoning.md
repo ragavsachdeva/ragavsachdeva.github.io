@@ -2,6 +2,7 @@
 layout: post
 title:  Bayesian Reasoning
 date: 2020-07-20
+comments: True
 description: Let me start by painting a picture. You wake up one fine morning feeling a bit sick. If you’re like me, you’d normally ignore it – hoping that you’ll get better soon enough. However, it’s 2020 and everything is unreal, so you decide to ...
 ---
 
