@@ -243,10 +243,13 @@ footer.sticky-bottom {
       margin-bottom: 0;
     }
     a {
-      color: var(--global-text-color);
-      text-decoration: none;
+      color: var(--global-link-color);
       &:hover {
         color: var(--global-theme-color);
+        text-decoration: underline;
+      }
+      &:hover:after {
+        width: 100%;
       }
     }
   }

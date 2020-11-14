@@ -19,7 +19,7 @@ last_updated: false # set to true if you want to display last updated in the foo
 # -----------------------------------------------------------------------------
 
 navbar_fixed: true
-footer_fixed: false
+footer_fixed: true
 # TODO: add layout settings (single page vs. multi-page)
 
 # -----------------------------------------------------------------------------
@@ -38,7 +38,7 @@ og_image: # The site-wide (default for all links) Open Graph preview image
 github_username: # your GitHub user name
 twitter_username: # your Twitter handle
 linkedin_username: # your LinkedIn user name
-scholar_userid: # your Google Scholar ID
+scholar_userid: js1EQ8oAAAAJ&hl # your Google Scholar ID
 orcid_id: # your ORCID ID
 medium_username: # your Medium username
 quora_username: # your Quora username
@@ -77,9 +77,9 @@ collections:
       layout: post
     output: true
     permalink: /news/:path/
-  # projects:
-  #   output: true
-  #   permalink: /projects/:path/
+  research:
+    output: true
+    permalink: /research/:title/
 
 news_limit: 100000
 
