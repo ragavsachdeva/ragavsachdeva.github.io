@@ -80,6 +80,9 @@ collections:
   research:
     output: true
     permalink: /research/:year/:title/
+  projects:
+    output: true
+    permalink: /projects/:path/
 
 news_limit: 100000
 
