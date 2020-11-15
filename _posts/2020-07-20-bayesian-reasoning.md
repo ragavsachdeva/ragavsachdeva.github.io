@@ -16,7 +16,7 @@ You start to consider yourself “the unluckiest person in the world”. I mean,
     </div>
 </div>
 
-Okay, so maybe you’re not the unluckiest person in _the_ world but still very, very unfortunate. You pinch yourself in order to wake up from this frightening nightmare but alas, it is all too real. You ask the doctor how reliable these results are and find out that this test is accurate $$99.9\%$$ of the time (i.e. the test comes back positive for $$99.9\%$$ of the people who have the disease and incorrectly comes back positive for $$0.01\%$$ of the people who don’t have the disease). As you hear this, your eyes light up with hope!
+Okay, so maybe you’re not _the_ unluckiest person in the world but still very, very unfortunate. You pinch yourself in order to wake up from this frightening nightmare but alas, it is all too real. You ask the doctor how reliable these results are and find out that this test is accurate $$99.9\%$$ of the time (i.e. the test comes back positive for $$99.9\%$$ of the people who have the disease and incorrectly comes back positive for $$0.01\%$$ of the people who don’t have the disease). As you hear this, your eyes light up with hope!
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0" style="text-align: center">
