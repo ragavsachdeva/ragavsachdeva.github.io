@@ -88,7 +88,11 @@
       {% endif %}
     {% endif %}
     {% if entry.blog %}
-      <a href="{{ entry.blog }}" class="btn btn-sm z-depth-0" role="button" target="_blank">Blog</a>
+      {% if entry.blog contains '://' %}
+        <a href="{{ entry.blog }}" class="btn btn-sm z-depth-0" role="button" target="_blank">Blog</a>
+      {% else %}
+        <a href="{{ entry.blog | prepend: '/research/' | relative_url }}" class="btn btn-sm z-depth-0" role="button">Blog</a>
+      {% endif %}
     {% endif %}
     {% if entry.code %}
       <a href="{{ entry.code }}" class="btn btn-sm z-depth-0" role="button" target="_blank">Code</a>
