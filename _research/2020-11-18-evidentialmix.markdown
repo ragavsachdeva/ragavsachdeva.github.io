@@ -47,7 +47,7 @@ Label noise can be broadly categorised into two categories: open-set noise and c
   <div class="padded" name="openvsclosed">
     <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/research_posts/2020-11-16-evidentialmix/openvsclosed.png">
     <div class="caption">
-      Consider a noisy training dataset of wolf and dog images. The images of wolves that are labelled as dogs or vice-versa belong to the closed-set noise. Images that neither wolves nor dogs belong to the open-set noise.
+      Consider a noisy training dataset of wolf and dog images. The images of wolves that are labelled as dogs or vice-versa belong to the closed-set noise. Images that are neither wolves nor dogs belong to the open-set noise.
     </div>
   </div>
 </div>
