@@ -30,7 +30,13 @@ _styles: >
     background: #f0f0f0;
   }
 
+  .link_btn {
+    border: 1px solid;
+  }
+
 ---
+<a href="http://arxiv.org/abs/2011.05704" class="btn link_btn btn-sm z-depth-0" role="button" target="_blank">Paper</a>
+<a href="https://github.com/ragavsachdeva/EvidentialMix" class="btn link_btn btn-sm z-depth-0" role="button" target="_blank">Code</a>
 
 ## Background
 
