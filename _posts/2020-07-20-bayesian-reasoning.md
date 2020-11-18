@@ -12,7 +12,7 @@ You start to consider yourself “the unluckiest person in the world”. I mean,
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0" style="text-align: center">
-        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/posts/2020-07-20-bayesian-reasoning/1.svg">
+        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/blog_posts/2020-07-20-bayesian-reasoning/1.svg">
     </div>
 </div>
 
@@ -20,7 +20,7 @@ Okay, so maybe you’re not _the_ unluckiest person in the world but still very,
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0" style="text-align: center">
-        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/posts/2020-07-20-bayesian-reasoning/2.svg">
+        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/blog_posts/2020-07-20-bayesian-reasoning/2.svg">
     </div>
 </div>
 
@@ -28,7 +28,7 @@ Believe it or not, in this picture of yours that I’m painting, you’re a lot 
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0" style="text-align: center">
-        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/posts/2020-07-20-bayesian-reasoning/3.svg">
+        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/blog_posts/2020-07-20-bayesian-reasoning/3.svg">
     </div>
 </div>
 
@@ -43,7 +43,7 @@ If this is the first time you’ve encountered such a line of reasoning, it may 
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0" style="text-align: center">
-        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/posts/2020-07-20-bayesian-reasoning/4.svg">
+        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/blog_posts/2020-07-20-bayesian-reasoning/4.svg">
     </div>
 </div>
 
@@ -54,7 +54,7 @@ The biggest takeaway here is: **The manifestation of some sort of evidence does 
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0" style="text-align: center">
-        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/posts/2020-07-20-bayesian-reasoning/5.svg">
+        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/blog_posts/2020-07-20-bayesian-reasoning/5.svg">
     </div>
 </div>
 
@@ -65,7 +65,7 @@ Bayesian reasoning is such a powerful concept and we [intuitively tend to use it
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0" style="text-align: center">
-        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/posts/2020-07-20-bayesian-reasoning/6.svg">
+        <img class="img-fluid rounded" src="{{ site.baseurl }}/assets/img/blog_posts/2020-07-20-bayesian-reasoning/6.svg">
     </div>
 </div>
 
