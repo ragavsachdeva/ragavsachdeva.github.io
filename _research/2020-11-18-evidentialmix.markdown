@@ -73,7 +73,7 @@ The main contributions of this paper are the following:
 
 * We formulate a novel benchmark evaluation for the noisy label learning problem that consists of a combination of open-set and closed-set noisy labels and propose a new learning algorithm, called **EvidentialMix (EDM)**, to address it.
 * We show that EDM is able to accurately distinguish between clean, open-set and closed-set samples, thus allowing it to exercise different learning mechanisms depending on the type of label noise. In comparison, previous methods can only separate clean samples from noisy ones, but not closed-noise from the open-noise samples.
-* We show that our method can learn superior feature representations than previous methods as evident from <a href="#results_tsne">t-SNE plots below</a>, where our method has a unique cluster for each of the known label/class and another separate cluster for open-set samples. In comparison, previous methods have shown to largely overfit the open-set samples and incorrectly cluster them to one of the known classes.
+* We show that our method can learn superior feature representations than previous methods as evident from the <a href="#results_tsne">t-SNE plots below</a>, where our method has a unique cluster for each of the known label/class and another separate cluster for open-set samples. In comparison, previous methods have shown to largely overfit the open-set samples and incorrectly cluster them to one of the known classes.
 * We experimentally show that EDM produces <a href="#results_table">classification accuracy</a> that is comparable or better than the previous methods on various label noise rates.
 
 ## Method
