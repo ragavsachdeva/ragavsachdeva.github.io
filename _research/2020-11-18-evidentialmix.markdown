@@ -139,7 +139,7 @@ The motivation for introducing this problem was to open the dialogue in the rese
 
 ***
 
-#### If you find this work useful, please considering citing us:
+**If you find this work useful, please considering citing us:**
 
 <pre class="verbatim">
 @misc{sachdeva2020evidentialmix,
