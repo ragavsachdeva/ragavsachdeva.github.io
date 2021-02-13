@@ -58,7 +58,7 @@ Label noise can be broadly categorised into two categories: open-set noise and c
   </div>
 </div>
 
-Traditionally, the study of closed-set and open-set noisy labels has been done in isolation from one another i.e. all the systematic studies (with *controlled* label noise) that have been presented, evaluated their methods on datasets that were exclusively corrupted with either closed-set noise or open-set nosie. However, it is quite easy to argue that both open-set and closed-set noise are likely to co-occur in real-world data sets. **Therefore, in this work, we formulate a novel benchmark evaluation to address the noisy label learning problem that consists of a combination of closed-set and open-set noise.**
+Traditionally, the study of closed-set and open-set noisy labels has been done in isolation from one another i.e. all the systematic studies (with *controlled* label noise) that have been presented, evaluated their methods on datasets that were exclusively corrupted with either closed-set noise or open-set noise. However, it is quite easy to argue that both open-set and closed-set noise are likely to co-occur in real-world data sets. **Therefore, in this work, we formulate a novel benchmark evaluation to address the noisy label learning problem that consists of a combination of closed-set and open-set noise.**
 
 ### Prior works
 
