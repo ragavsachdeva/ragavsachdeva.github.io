@@ -148,12 +148,12 @@ The motivation for introducing this problem was to open the dialogue in the rese
 **If you find this work useful, please considering citing us:**
 
 <pre class="verbatim">
-@misc{sachdeva2020evidentialmix,
-  title={EvidentialMix: Learning with Combined Open-set and Closed-set Noisy Labels}, 
-  author={Ragav Sachdeva and Filipe R. Cordeiro and Vasileios Belagiannis and Ian Reid and Gustavo Carneiro},
-  year={2020},
-  eprint={2011.05704},
-  archivePrefix={arXiv},
-  primaryClass={cs.LG}
+@InProceedings{Sachdeva_2021_WACV,
+  author    = {Sachdeva, Ragav and Cordeiro, Filipe R. and Belagiannis, Vasileios and Reid, Ian and Carneiro, Gustavo},
+  title     = {EvidentialMix: Learning With Combined Open-Set and Closed-Set Noisy Labels},
+  booktitle = {Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)},
+  month     = {January},
+  year      = {2021},
+  pages     = {3607-3615},
 }
 </pre>
