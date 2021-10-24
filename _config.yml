@@ -57,9 +57,9 @@ google_analytics: G-RGNX6G39ZX # out your google-analytics code
 # Blog
 # -----------------------------------------------------------------------------
 
-blog_name: blog  # your blog must have a name for it to show up in the nav bar
+blog_name: posts  # your blog must have a name for it to show up in the nav bar
 blog_description: sometimes words come out of my hands
-permalink: /blog/:year/:title/
+permalink: /posts/:year/:title/
 
 # Pagination
 pagination:
@@ -81,6 +81,9 @@ collections:
   research:
     output: true
     permalink: /research/:year/:title/
+  doodles:
+    output: true
+    permalink: /doodles/:year/:title
 
 news_limit: 100000
 
