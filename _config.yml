@@ -81,9 +81,6 @@ collections:
   research:
     output: true
     permalink: /research/:year/:title/
-  doodles:
-    output: true
-    permalink: /doodles/:year/:title
 
 news_limit: 100000
 
