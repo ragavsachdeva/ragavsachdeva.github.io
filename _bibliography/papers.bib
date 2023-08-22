@@ -1,6 +1,18 @@
 ---
 ---
 
+@inproceedings{sachdeva2023iccvw,
+      abbr={ICCVW'23},
+      title={The Change You Want to See (Now in 3D)},
+      author={Sachdeva, Ragav and Zisserman, Andrew},
+      booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
+      year={2023},
+      arxiv={2308.10417},
+      code={https://github.com/ragavsachdeva/CYWS-3D},
+      abstract={The goal of this paper is to detect what has changed, if anything, between two "in the wild" images of the same 3D scene acquired from different camera positions and at different temporal instances. The open-set nature of this problem, occlusions/dis-occlusions due to the shift in viewpoint, and the lack of suitable training datasets, presents substantial challenges in devising a solution. To address this problem, we contribute a change detection model that is trained entirely on synthetic data and is class-agnostic, yet it is performant out-of-the-box on real world images without requiring fine-tuning. Our solution entails a "register and difference" approach that leverages self-supervised frozen embeddings and feature differences, which allows the model to generalise to a wide variety of scenes and domains. The model is able to operate directly on two RGB images, without requiring access to ground truth camera intrinsics, extrinsics, depth maps, point clouds, or additional before-after images. Finally, we collect and release a new evaluation dataset consisting of real-world image pairs with human-annotated differences and demonstrate the efficacy of our method.}
+}
+
+
 @InProceedings{sachdeva2023wacv,
       abbr={WACV'23},
       author    = {Sachdeva, Ragav and Zisserman, Andrew},
