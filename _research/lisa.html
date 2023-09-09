@@ -1,0 +1,3356 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>List Annotation (LISA)</title>
+    <meta name="author" content="Abhishek Dutta">
+    <meta name="description" content="A simple and standalone tool for reviewing a list of images and adding annotations to it as required.">
+<!-- START: Contents of file: lisa.css-->
+<style>
+/*
+  List Annotator (LISA) stylesheet
+  Author: Abhishek Dutta <adutta@robots.ox.ac.uk>
+  Date: 29 May 2020
+*/
+
+body {
+  font-family: sans;
+  font-size: 12pt;
+  margin: .2em .5em;
+  padding: 0;
+  background-color:dimgrey;
+  color: white;
+}
+
+textarea {
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: scroll;
+}
+
+table {
+  max-width: 100%;
+  border-collapse: collapse;
+}
+
+td, th {
+  border: 1px solid;
+  padding: .5em 1em;
+}
+
+#shared_project_id {
+  width: 25em;
+}
+
+#_lisa_container {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -webkit-touch-callout: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  margin-bottom: 2em;
+}
+
+#_lisa_container::after {
+  content: "";
+  flex: auto;
+}
+
+#_lisa_container figure {
+  position: relative;
+  display: inline-block;
+  flex-grow: 0;
+  border: 1px solid #c8c8c8;
+  margin: .4em .2em;
+  padding: 0;
+}
+
+#_lisa_container figure span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-color: #000;
+  color: #FFF;
+  font-size: small;
+  padding: 2px;
+}
+
+#_lisa_container figure svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+#_lisa_container figure svg rect {
+  stroke-width: .2em;
+  fill: none;
+  stroke: rgb(215, 255, 123);
+  pointer-events: none;
+}
+
+#_lisa_container figure svg circle {
+  stroke-width: .1em;
+  fill: #000;
+  stroke: #FF0;
+  pointer-events: none;
+}
+
+#_lisa_container figure svg .sel {
+  stroke: rgb(215, 255, 123);
+  fill: #000;
+  fill-opacity: .5;
+}
+
+#_lisa_container figure figcaption #item_toolbar_container {
+  display: inline-block;
+  text-align: center;
+  padding: .4em 0;
+}
+
+#_lisa_container figure figcaption #item_toolbar_container button {
+  font-size: small;
+  margin-right: .2em;
+}
+
+#_lisa_container figure figcaption #item_metadata_container {
+  display: inline-block;
+  padding: .4em 0;
+  text-align: center;
+}
+
+#_lisa_container figure figcaption #item_metadata_container fieldset {
+  text-align: left;
+}
+
+#_lisa_container figure figcaption #item_metadata_container .attribute {
+  display: block;
+}
+
+#_lisa_container figure figcaption #item_metadata_container .attribute > .aname {
+  font-weight: 700;
+}
+
+#_lisa_container figure figcaption #item_metadata_container input[type=text] {
+  width: 95%;
+}
+
+#_lisa_message_container {
+  display: block;
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  z-index: 9999;
+  text-align: center;
+}
+
+#_lisa_message_container .log {
+  display: inline;
+  background-color: #000;
+  color: #FF0;
+  font-size: medium;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 2rem;
+  margin: auto;
+  padding: .5rem 2rem;
+}
+
+._lisa_hide {
+  display: none!important;
+}
+
+._lisa_key {
+  font-family: monospace;
+  background: linear-gradient(to bottom,#f0f0f0,#fcfcfc);
+  border: 1px solid #e0e0e0;
+  white-space: nowrap;
+  color: #303030;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  font-size: 1.2em;
+  padding: 1px 6px;
+}
+
+._lisa_txt_warning {
+  color: red;
+}
+
+#_lisa_attribute_container {
+  position: absolute;
+  display: inline-block;
+  background-color: dimgrey;
+  margin: 0;
+}
+
+#_lisa_attribute_container table {
+  border-collapse: collapse;
+  border: 1px solid #424242;
+  padding: 1em;
+}
+
+#_lisa_toolbar_container {
+  display: block;
+  border: 1px solid #424242;
+  margin-bottom: 1em;
+  padding: .4em .5em;
+}
+
+#_lisa_toolbar_container div:first-child {
+  margin-right: 1em;
+}
+
+#_lisa_toolbar_container div:not(:first-child) {
+  padding: 0 1em;
+}
+
+input,
+button,
+#_lisa_attribute_container table select,
+#_lisa_toolbar_container div button {
+  font-size: small;
+}
+
+#_lisa_container figure audio,
+#_lisa_container figure img,
+#_lisa_container figure video {
+  border: none;
+  object-fit: fill;
+  margin: 0;
+  padding: 0;
+}
+
+#_lisa_container figure figcaption #item_metadata_container .attribute > div,
+#_lisa_toolbar_container div {
+  display: inline;
+}
+
+#_lisa_attribute_container table th,
+#_lisa_attribute_container table td {
+  border: 1px solid #424242;
+  padding:1em;
+}
+</style>
+<!-- END: Contents of file: lisa.css-->
+  </head>
+  <body>
+<!-- START: Contents of file: lisa.js-->
+<script>
+// List Annotation (LISA)
+// Author: Abhishek Dutta <adutta@robots.ox.ac.uk>
+// Date: 29 May 2020
+
+'use strict';
+
+// state variables
+const _LISA_RINPUT_STATE = {
+  UNKNOWN: 0,
+  IDLE: 1,
+  REGION_SELECTED: 2,
+  REGION_SELECT_OR_DRAW_POSSIBLE: 3,
+  REGION_UNSELECT_ONGOING: 4,
+  REGION_MOVE_ONGOING: 5,
+  REGION_RESIZE_ONGOING: 6,
+  REGION_DRAW_ONGOING: 7,
+  REGION_CONNECTION_ONGOING: 8,
+};
+
+const _LISA_COOKIE_MAX_AGE = 2592000; // LISA cookies expire in 30 days
+
+var _lisa_state_id = _LISA_RINPUT_STATE.IDLE;
+var _lisa_user_input_pts = [];   // [x0, y0, x1, y1, ...]
+var _lisa_last_clicked_rindex = -1;
+var _lisa_last_edge   = [-1, -1];  // [rindex, edge_index]
+var _lisa_sel_item    = null; // reference to selected image
+var _lisa_sel_rindex  = -1;  // selected region index
+var _lisa_message_clear_timer = null;
+var _lisa_has_load_error_occured = false;
+var _lisa_active_item_id = -1;
+var _lisa_last_mouseover_item_id = -1;
+var _lisa_show_only_annotated_entries = false;
+
+var _lisa_texts_hidden = false;
+var _lisa_characters_hidden = false;
+var _lisa_text_to_chars_lines_hidden = false;
+var _lisa_chars_to_chars_lines_hidden = true;
+var _lisa_bbox_labels_hidden = false;
+
+var _lisa_graph_mode = false
+var _lisa_sel_connection_rindex = []
+var _lisa_sel_connection_item = []
+
+var character_color = "#2E86E0";
+var text_box_color = "#FF5765";
+var char_to_char_color = "#FFBD20";
+var text_to_chars_color = "#FF5765";
+
+
+// lines below can be replaced by scripts to automatically load a project
+// const _LISA_AUTOLOAD_PROJECT = '';
+// const _LISA_AUTOLOAD_SHARED_PROJECT = '';
+
+// constants
+const _lisa_svg_ns = 'http://www.w3.org/2000/svg';
+var _LISA_MOUSE_CLICK_TOL = 5;
+var _LISA_EDGE_CLICK_TOL = 5;
+var _LISA_TMP_REGION_ID = '_lisa_temp_region';
+var _LISA_RECT_STROKE = 3;
+const _LISA_POINT_RADIUS = 3;
+var _LISA_RECT_MIN_SIZE = 8;
+var _LISA_MESSAGE_TIMEOUT_MS = 7000;
+const _LISA_NAME = 'List Annotator';
+const _LISA_SHORT_NAME = 'LISA';
+const _LISA_VERSION = '0.0.4';
+const _LISA_SHARED_ENDPOINT = 'https://meru.robots.ox.ac.uk/store/';
+const _LISA_SHARED_ENDPOINT_TIMEOUT = 6000;
+const _LISA_SHARED_FILEID_MARKER = '__FILE_ID__';
+const _LISA_SHARED_REV_MARKER = '__FILE_REV_ID__';
+const _LISA_SHARED_REV_TIMESTAMP_MARKER = '__FILE_REV_TIMESTAMP__';
+const _LISA_MAX_PAGE_SIZE = 1000; // max. number of images in one page
+const _LISA_ITEM_SVG_OFFSET = 2; // {img:for image, span:for image label, svg:for rectangular regions}
+const _LISA_REGION_ATTRIBUTE_OFFSET = 40; // in pixels
+const _LISA_EDGE_SNAP_TOL = 8;
+const _LISA_DEFAULT_ITEM_HEIGHT = 300; // in pixels
+const _LISA_DEFAULT_AUDIO_ITEM_HEIGHT = 100; // in pixels
+const _LISA_ITEM_HEIGHT_INCREMENT = 100; // in pixels
+const _LISA_MAX_IMAGE_HEIGHT = 2160;
+const _LISA_MIN_IMAGE_HEIGHT = 100;
+
+
+// These are feature flags.  These features are useful in some cases
+// but can be disruptive if you don't need them.  So they're behind
+// feature flags (issue #30).
+
+// Double click on the image to delete all its regions.  This is
+// helpful when correcting annotations and it's easier to delete
+// everything.  However, it's too easy to accidentaly double click and
+// losing all previous annotations so it's not on by default.
+const _LISA_FEATURE_DBLCLICK_DELETE_ALL = false;
+
+// Feature points are "regions" to refer to a single point.  In some
+// cases people want to annotate points but if they don't it makes too
+// easy to add feature points when selecting boxes.  See issue #19.
+const _LISA_FEATURE_FEATURE_POINTS = false;
+
+
+const _LISA_DEMO_FILELIST = [
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Seehof_Phoenicurus_ochruros_female_5264746.jpg/320px-Seehof_Phoenicurus_ochruros_female_5264746.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Mt.Macchapucchere_%281%29.JPG/320px-Mt.Macchapucchere_%281%29.JPG',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/African_Cape_Daisy_%28Osteospermum_barberiae%29.jpg/236px-African_Cape_Daisy_%28Osteospermum_barberiae%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Black-veined_white_%28Aporia_crataegi%29_male_underside.jpg/320px-Black-veined_white_%28Aporia_crataegi%29_male_underside.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Apple-tree_blossoms_2017_G3.jpg/320px-Apple-tree_blossoms_2017_G3.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Red_Clover_2011_G1.jpg/208px-Red_Clover_2011_G1.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Kokardenblume_Gaillardia_aristata_stack28_20190721-RM-7210879.jpg/320px-Kokardenblume_Gaillardia_aristata_stack28_20190721-RM-7210879.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Phalaenopsis_Cultivar_Mini_01.jpg/320px-Phalaenopsis_Cultivar_Mini_01.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Ara-Zoo-Muenster-2013-02.jpg/320px-Ara-Zoo-Muenster-2013-02.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Rosy-faced_lovebirds_%28Agapornis_roseicollis_roseicollis%29_composite_1_of_3.jpg/213px-Rosy-faced_lovebirds_%28Agapornis_roseicollis_roseicollis%29_composite_1_of_3.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Daubeny%27s_water_lily_at_BBG_%2850824%29.jpg/289px-Daubeny%27s_water_lily_at_BBG_%2850824%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Crocuses_at_BBG_%2843248%29.jpg/317px-Crocuses_at_BBG_%2843248%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Red-billed_oxpecker_%28Buphagus_erythrorhynchus%29_on_impala_%28Aepyceros_melampus%29.jpg/320px-Red-billed_oxpecker_%28Buphagus_erythrorhynchus%29_on_impala_%28Aepyceros_melampus%29.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Paradise_shelduck_portrait%2C_New_Zealand.jpg/320px-Paradise_shelduck_portrait%2C_New_Zealand.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Common_tiger_%28Danaus_genutia_genutia%29_male_underside.jpg/320px-Common_tiger_%28Danaus_genutia_genutia%29_male_underside.jpg',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Sympetrum_fonscolombii%2C_female%2C_S%C3%A8te_cf04.jpg/320px-Sympetrum_fonscolombii%2C_female%2C_S%C3%A8te_cf04.jpg',
+];
+
+var _lisa_keyboard_shortcut_html_str = `<h3>Shortcut Keys</h3>
+<table>
+<thead><tr><th>Key</th><th>Action</th></tr></thread>
+<tr><td><span class="_lisa_key">Ctrl</span> + <span class="_lisa_key">c</span></td><td>Save shared project online.</td></tr>
+<tr><td><span class="_lisa_key">q</span></td><td>To turn on "graph mode" i.e. draw lines between boxes.</td></tr>
+<tr><td><span class="_lisa_key">Ctrl</span> + <span class="_lisa_key">[</span></td><td>Toggle visibility of character bboxes.</td></tr>
+<tr><td><span class="_lisa_key">Ctrl</span> + <span class="_lisa_key">]</span></td><td>Toggle visibility of text bboxes.</td></tr>
+<tr><td><span class="_lisa_key">Ctrl</span> + <span class="_lisa_key">,</span></td><td>Toggle visibility of text-to-character lines.</td></tr>
+<tr><td><span class="_lisa_key">Ctrl</span> + <span class="_lisa_key">.</span></td><td>Toggle visibility of character-to-character lines.</td></tr>
+<tr><td><span class="_lisa_key">Ctrl</span> + <span class="_lisa_key">/</span></td><td>Toggle visibility of character IDs.</td></tr>
+<tr><td><span class="_lisa_key">s</span></td><td>Show a summary of metadata</td></tr>
+<tr><td><span class="_lisa_key">?</span></td><td>Show a list of available keyboard shortcuts</td></tr>
+<tr><td><span class="_lisa_key">Shift</span> + <span class="_lisa_key">&larr;</span>&nbsp;<span class="_lisa_key">&rarr;</span>&nbsp;<span class="_lisa_key">&uarr;</span>&nbsp;<span class="_lisa_key">&darr;</span></td><td>Move selected region by 1 pixel  (use <span class="_lisa_key">Shift</span> to move by 10 pixels)</td></tr>
+<tr><td><span class="_lisa_key">Backspace</span> or <span class="_lisa_key">Del</span></td><td>Delete selected region</td></tr>
+</table>`
+
+// metadata store
+var _lisa_svg_store = {};    // store of svg shape for regions of an item (used for visualizing regions)
+var _lisa_item_scale = {};   // scale factor for resized images seen by users
+
+var _lisa_store = {
+  'project':{
+    'shared_fid':'__FILE_ID__',
+    'shared_rev':'__FILE_REV_ID__',
+    'shared_rev_timestamp':'__FILE_REV_TIMESTAMP__',
+    'project_name':'',
+    'project_id':_lisa_uuid(),
+    'creator':'List Annotator - LISA (https://gitlab.com/vgg/lisa)',
+    'editor':'List Annotator - LISA (https://gitlab.com/vgg/lisa)',
+    'file_format_version':'0.0.3',
+    'created_timestamp':Date.now(),
+  },
+  'config':{
+    'file_src_prefix':'',
+    'navigation_from':-1,
+    'navigation_to':-1,
+    'item_per_page':-1,
+    'float_precision':4,
+    'item_height_in_pixel':_LISA_DEFAULT_ITEM_HEIGHT,
+    'show_attributes': { 'file':[], 'region':[] }
+  },
+  'attributes':{
+    'file':{
+      'width': {'aname':'Width', 'atype':'text'},
+      'height': {'aname':'Height', 'atype':'text'}
+    },
+    'region':{}
+  },
+  'files':[]
+};
+
+// COCO import/export
+var _lisa_coco_copy = {};  // save of copy of imported COCO annotation for export
+
+document.body.innerHTML = '';
+
+// navigation bar
+var _lisa_toolbar_container = document.createElement('div');
+_lisa_toolbar_container.setAttribute('id', '_lisa_toolbar_container');
+var appname = document.createElement('div');
+appname.innerHTML = '<a href="https://gitlab.com/vgg/lisa">' + _LISA_SHORT_NAME + '</a>';
+_lisa_toolbar_container.appendChild(appname);
+var _lisa_toolbar = document.createElement('div');
+_lisa_toolbar_container.appendChild(_lisa_toolbar);
+document.body.appendChild(_lisa_toolbar_container);
+
+// define all HTML container elements used by LISA
+var _lisa_container = document.createElement('div');
+_lisa_container.setAttribute('id', '_lisa_container');
+document.body.appendChild(_lisa_container);
+
+// log container
+var _lisa_message_container = document.createElement('div');
+_lisa_message_container.setAttribute('id', '_lisa_message_container');
+_lisa_message_container.classList.add('_lisa_hide');
+var _lisa_log_container = document.createElement('div');
+_lisa_log_container.setAttribute('class', 'log');
+_lisa_message_container.appendChild(_lisa_log_container);
+document.body.appendChild(_lisa_message_container);
+
+// attribute container
+var _lisa_attribute_container = document.createElement('div');
+_lisa_attribute_container.setAttribute('id', '_lisa_attribute_container');
+_lisa_attribute_container.setAttribute('class', '_lisa_hide');
+document.body.appendChild(_lisa_attribute_container);
+
+_lisa_init();
+
+function _lisa_init() {
+  window.addEventListener('keydown', _lisa_img_keydown_handler);
+  _lisa_log(_LISA_NAME + ' (' + _LISA_SHORT_NAME + ') ' + _LISA_VERSION);
+
+  if( _lisa_store['files'].length === 0 ) {
+    if(typeof(_LISA_AUTOLOAD_PROJECT) === 'undefined') {
+      if(typeof(_LISA_AUTOLOAD_SHARED_PROJECT) === 'undefined') {
+        _lisa_load_or_init_project_panel();
+      } else {
+        _lisa_load_shared_project(_LISA_AUTOLOAD_SHARED_PROJECT);
+      }
+    } else {
+      _lisa_store = JSON.parse(_LISA_AUTOLOAD_PROJECT);
+      document.title = _lisa_store['project']['project_name'];
+      _lisa_show_file_list(0);
+    }
+  } else {
+    _lisa_show_file_list(0);
+  }
+
+}
+
+function _lisa_show_file_list(from_findex) {
+  if(_lisa_store['files'].length === 0) {
+    _lisa_store['config']['navigation_from'] = -1;
+    _lisa_store['config']['navigation_to'] = -1;
+    _lisa_log('No files to show');
+    return;
+  }
+
+  var page_size = _lisa_store['config']['navigation_to'] - _lisa_store['config']['navigation_from'];
+  if(_lisa_store['config'].hasOwnProperty('item_per_page') &&
+     _lisa_store['config']['item_per_page'] !== -1 ) {
+    page_size = parseInt( _lisa_store['config']['item_per_page'] );
+  }
+
+  if(typeof(from_findex) === 'undefined' ||
+     from_findex > _lisa_store['files'].length) {
+    // check if we can recover last session based on cookies
+    var config = _lisa_parse_config_from_cookies();
+    if(config.length === 2) {
+      _lisa_store['config']['navigation_from'] = parseInt(config[0]);
+      if(config.hasOwnProperty('navigation_to')) {
+        _lisa_store['config']['navigation_to'] = parseInt(config[1]);
+      }
+    } else {
+      _lisa_store['config']['navigation_from'] = 0;
+    }
+  } else {
+    if(from_findex >= 0 && from_findex < _lisa_store['files'].length) {
+      _lisa_store['config']['navigation_from'] = parseInt(from_findex);
+    } else {
+      _lisa_store['config']['navigation_from'] = 0;
+    }
+  }
+
+  if(_lisa_store['config']['navigation_to'] === -1 && (page_size <= 0)) {
+    if(_lisa_store['files'].length < 500) {
+      _lisa_store['config']['navigation_to'] = _lisa_store['files'].length;
+    } else {
+      if(_lisa_store['files'].length < 5000) {
+        _lisa_store['config']['navigation_to'] = _lisa_store['config']['navigation_from'] + 500;
+      } else {
+        _lisa_store['config']['navigation_to'] = _lisa_store['config']['navigation_from'] + 1000;
+      }
+    }
+  } else {
+    _lisa_store['config']['navigation_to'] = _lisa_store['config']['navigation_from'] + page_size
+  }
+
+  if(_lisa_store['config']['navigation_to'] >= _lisa_store['files'].length) {
+    _lisa_store['config']['navigation_to'] = _lisa_store['files'].length;
+  }
+
+  _lisa_container.innerHTML = '';
+  var findex = _lisa_store['config']['navigation_from'];
+  var _lisa_container_backbuf = document.createElement('div');
+  _lisa_container_backbuf.setAttribute('id', '_lisa_container');
+
+  for(; findex < _lisa_store['config']['navigation_to']; ++findex) {
+    if(_lisa_store['files'][findex]['regions'].length === 0 &&
+       _lisa_show_only_annotated_entries) {
+      continue;
+    }
+    var item_fn = _lisa_store['config']['file_src_prefix'] + _lisa_store['files'][findex]['src'];
+    var item;
+    var file_type = _lisa_file_type_from_file_extension(item_fn);
+    switch(file_type) {
+    case 'audio':
+      // both audio and video are treated as same class because
+      // audio does not occupy display area when controls are invisible
+      // @todo: find a more elegant way to deal with audio
+      item = document.createElement('audio');
+      item.setAttribute('controls', '');
+      //item.removeAttribute('loop');
+      item.addEventListener('loadeddata', _lisa_on_item_load);
+      break
+    case 'video':
+      item = document.createElement('video');
+      item.setAttribute('playsinline', '');
+      //item.removeAttribute('loop');
+      item.setAttribute('preload', 'auto');
+      item.addEventListener('loadeddata', _lisa_on_item_load);
+      break;
+    case 'image':
+      item = document.createElement('img');
+      item.addEventListener('load', _lisa_on_item_load);
+      break;
+    case 'UNKNOWN':
+      console.log('Discarding unknown file type: ' + item_fn)
+      continue;
+    }
+    item.setAttribute('src', item_fn);
+    item.setAttribute('id', findex);
+
+    // item size
+    if(!_lisa_store['config'].hasOwnProperty('item_height_in_pixel')) {
+      _lisa_store['config']['item_height_in_pixel'] = _LISA_DEFAULT_ITEM_HEIGHT;
+    }
+    if(file_type === 'audio') {
+      _lisa_store['config']['item_height_in_pixel'] = _LISA_DEFAULT_AUDIO_ITEM_HEIGHT;
+    }
+
+    var item_style = 'height:' + _lisa_store['config']['item_height_in_pixel'] + 'px;';
+    item.setAttribute('style', item_style);
+
+    if (_LISA_FEATURE_DBLCLICK_DELETE_ALL)
+      item.addEventListener('dblclick', _lisa_img_dblclick_handler);    // to handle deleting drawn regions
+
+    item.addEventListener('mouseup', _lisa_img_mouseup_handler);      // to handle new image region draw operations
+    item.addEventListener('mousedown', _lisa_img_mousedown_handler);  // to handle new image region draw operations
+    item.addEventListener('mousemove', _lisa_img_mousemove_handler);  // to handle new image region draw operations
+    item.addEventListener('error', _lisa_on_item_error);
+
+    var item_container = document.createElement('figure');
+    item_container.appendChild(item);
+    _lisa_container_backbuf.appendChild(item_container);
+  }
+  document.body.replaceChild(_lisa_container_backbuf, _lisa_container);
+  _lisa_container = _lisa_container_backbuf;
+
+  _lisa_log('Showing files from ' + (_lisa_store['config']['navigation_from']) + ' to ' + _lisa_store['config']['navigation_to'] + ' of total ' + _lisa_store['files'].length + ' files.');
+  _lisa_update_toolbar();
+
+  // set cookies
+  var key = _lisa_store['project']['project_id'];
+  var val = _lisa_store['config']['navigation_from'] + '|' + _lisa_store['config']['navigation_to'];
+  document.cookie =  key + '=' + val + ';max-age=' + _LISA_COOKIE_MAX_AGE + ';SameSite=Lax';
+}
+
+function _lisa_toggle_charater_region_ids(turn_it_on) {
+  if (!turn_it_on) {
+    var all_texts = document.querySelectorAll("text");
+    for (var i = 0; i < all_texts.length; i++) {
+        all_texts[i].remove();
+    }
+    return;
+  }
+  var regions = document.querySelectorAll('rect');
+  var label = {};
+  var visited = new Set();
+  for(var rindex = 0; rindex < regions.length; ++rindex) {
+    var region = regions[rindex];
+    if (visited.has(region.id)) {
+      continue;
+    }
+    // check rects attribute "bbox" to see if it matches bbox_type
+    let id = region.id.split('_');
+    let image_id = id[0] * 1;
+    let region_id = id[1] * 1;
+    if (_lisa_store['files'][image_id]['rdata'][region_id]["bbox"] != "character") {
+      continue;
+    }
+    var connected_regions = dfs(image_id, region_id);
+    if (connected_regions.length == 1) {
+      continue;
+    }
+    for (var i = 0; i < connected_regions.length; i++) {
+      var bbox_coords = _lisa_svg_store[image_id][connected_regions[i]];
+      visited.add(image_id + "_" + connected_regions[i]);
+      var text = document.createElementNS(_lisa_svg_ns, 'text');
+      text.setAttributeNS(null, 'x', bbox_coords[0] + bbox_coords[2] / 2);
+      text.setAttributeNS(null, 'y', bbox_coords[1] + bbox_coords[3] / 2);
+      text.setAttributeNS(null, 'font-size', 20);
+      text.setAttributeNS(null, 'text-anchor', 'middle');
+      text.setAttributeNS(null, 'alignment-baseline', 'middle');
+      // style="stroke:white; stroke-width:0.5em; fill:black; paint-order:stroke; stroke-linejoin:round
+      text.setAttributeNS(null, 'paint-order', 'stroke');
+      text.setAttributeNS(null, 'stroke', 'red');
+      text.setAttributeNS(null, 'stroke-width', '1em');
+      text.setAttributeNS(null, 'stroke-linejoin', 'round');
+      text.setAttributeNS(null, 'fill', 'white');
+
+      if (!(image_id in label)) {
+        label[image_id] = 1;
+      }
+      text.innerHTML = label[image_id];
+      region.parentNode.appendChild(text);
+    }
+    label[image_id] += 1;
+  }
+}
+
+function _lisa_toggle_regions(type) {
+  var object_type = {
+    "text": "rect",
+    "character": "rect",
+    "text_to_chars": "line",
+    "chars_to_chars": "line"
+
+  };
+  var regions = document.querySelectorAll(object_type[type]);
+  if (type == "text") {
+    var is_hidden = _lisa_texts_hidden;
+  }
+  else if (type == "character") {
+    var is_hidden = _lisa_characters_hidden;
+  }
+  else if (type == "text_to_chars") {
+    var is_hidden = _lisa_text_to_chars_lines_hidden;
+  }
+  else if (type == "chars_to_chars") {
+    var is_hidden = _lisa_chars_to_chars_lines_hidden;
+  }
+  for(var rindex = 0; rindex < regions.length; ++rindex) {
+    var region = regions[rindex];
+    // check rects attribute "bbox" to see if it matches bbox_type
+    let id = region.id.split('_');
+    let image_id = id[0] * 1;
+    let region_id = id[1] * 1;
+    if(_lisa_store['files'][image_id]['regions'][region_id].length == 4) {
+      if (type != "text" && type != "character") {
+        continue;
+      }
+      if (_lisa_store['files'][image_id]['rdata'][region_id]["bbox"] != type) {
+        continue;
+      }
+    } else {
+      if (type != "text_to_chars" && type != "chars_to_chars") {
+          continue;
+      }
+      var A = _lisa_store['files'][image_id]['regions'][region_id][0];
+      var B = _lisa_store['files'][image_id]['regions'][region_id][1];
+      if (type == "text_to_chars") {
+        if (_lisa_store['files'][image_id]['rdata'][A]["bbox"] == "character" && _lisa_store['files'][image_id]['rdata'][B]["bbox"] == "character") {
+          continue;
+        }
+      }
+      if (type == "chars_to_chars") {
+        if (_lisa_store['files'][image_id]['rdata'][A]["bbox"] == "text" || _lisa_store['files'][image_id]['rdata'][B]["bbox"] == "text") {
+          continue;
+        }
+      }
+    }
+    if(is_hidden) {
+      region.classList.remove('_lisa_hide');
+    } else {
+      region.classList.add('_lisa_hide');
+    }
+    
+  }
+  if (type == "text") {
+    _lisa_texts_hidden = !_lisa_texts_hidden;
+  }
+  else if (type == "character") {
+    _lisa_characters_hidden = !_lisa_characters_hidden;
+  }
+  else if (type == "text_to_chars") {
+    _lisa_text_to_chars_lines_hidden = !_lisa_text_to_chars_lines_hidden;
+  }
+  else if (type == "chars_to_chars") {
+    _lisa_chars_to_chars_lines_hidden = !_lisa_chars_to_chars_lines_hidden;
+  }
+}
+
+
+function _lisa_construct_play_button(media_el) {
+  let play = document.createElement('button');
+  play.innerHTML = 'Play';
+  play.addEventListener('click', function(e) {
+    if(media_el.paused) {
+      media_el.play();
+      e.target.innerHTML = 'Stop';
+    } else {
+      media_el.pause();
+      e.target.innerHTML = 'Play';
+    }
+  }.bind(this));
+  return play;
+}
+
+
+function _lisa_on_item_load(e) {
+  var item_label = document.createElement('span');
+  item_label.innerHTML = parseInt(this.id);
+  this.parentNode.appendChild(item_label);
+
+  // get the size video or image
+  var item_natural_size = [-1, -1]; // width, height
+  var item_visible_size = [e.target.offsetWidth, e.target.offsetHeight];
+  switch(this.nodeName) {
+  case 'VIDEO':
+    item_natural_size = [e.target.videoWidth, e.target.videoHeight];
+    if(_lisa_store['files'][this.id]['regions'].length) {
+      if(_lisa_store['files'][this.id]['regions'][0].length === 5) {
+        // jump to the frame referenced in the region
+        // assumption: _lisa_store['files'][this.id]['regions'][0] = [x, y, width, height, frame_time]
+        this.currentTime = _lisa_store['files'][this.id]['regions'][0][4];
+      }
+    }
+    break;
+  case 'AUDIO':
+  case 'IMG':
+    item_natural_size = [e.target.naturalWidth, e.target.naturalHeight];
+    break;
+  default:
+    console.error('Unknown node name');
+  }
+
+  _lisa_item_scale[this.id] = item_natural_size[0] / item_visible_size[0];
+  _lisa_store['files'][this.id]['fdata']['width'] = item_natural_size[0];
+  _lisa_store['files'][this.id]['fdata']['height'] = item_natural_size[1];
+
+  _lisa_svg_store[this.id] = [];
+
+  var svg;
+  if(this.parentNode.children.length === _LISA_ITEM_SVG_OFFSET) {
+    // initialize svg container
+    svg = document.createElementNS(_lisa_svg_ns, 'svg');
+    svg.setAttributeNS(null, 'viewBox', '0 0 ' + item_visible_size[0] + ' ' + item_visible_size[1]);
+    svg.setAttributeNS(null, 'style', 'width:' + item_visible_size[0] + 'px; height:' + item_visible_size[1] + 'px;');
+    this.parentNode.appendChild(svg);
+  } else {
+    svg = this.parentNode.children[_LISA_ITEM_SVG_OFFSET];
+  }
+
+  if(_lisa_store['files'][this.id]['regions'].length) {
+    for(var rindex in _lisa_store['files'][this.id]['regions']) {
+      const pts = _lisa_store['files'][this.id]['regions'][rindex];
+      const pts_count = pts.length;
+      var x = _lisa_store['files'][this.id]['regions'][rindex][0];
+      var y = _lisa_store['files'][this.id]['regions'][rindex][1];
+      var svgx = Math.max(0, x / _lisa_item_scale[this.id]);
+      var svgy = Math.max(0, y / _lisa_item_scale[this.id]);
+
+      var svg_shape;
+      if(pts_count === 2) {
+        // feature point
+        _lisa_svg_store[this.id].push([ svgx, svgy ]);
+        svg_shape = document.createElementNS(_lisa_svg_ns, 'circle');
+        svg_shape.setAttributeNS(null, 'cx', svgx);
+        svg_shape.setAttributeNS(null, 'cy', svgy);
+        svg_shape.setAttributeNS(null, 'r', _LISA_POINT_RADIUS);
+      } else if (pts_count == 4) {
+        // rect
+        var w = _lisa_store['files'][this.id]['regions'][rindex][2];
+        var h = _lisa_store['files'][this.id]['regions'][rindex][3];
+        var svgw = Math.max(0, w / _lisa_item_scale[this.id]);
+        var svgh = Math.max(0, h / _lisa_item_scale[this.id]);
+        _lisa_svg_store[this.id].push([ svgx, svgy, svgw, svgh ]);
+        svg_shape = document.createElementNS(_lisa_svg_ns, 'rect');
+        svg_shape.setAttributeNS(null, 'id', this.id + '_' + rindex);
+        svg_shape.setAttributeNS(null, 'x', svgx);
+        svg_shape.setAttributeNS(null, 'y', svgy);
+        svg_shape.setAttributeNS(null, 'width', svgw);
+        svg_shape.setAttributeNS(null, 'height', svgh);
+
+        if (_lisa_store['files'][this.id]['rdata'][rindex]["bbox"] == "character") {
+          svg_shape.setAttributeNS(null, 'style', 'stroke: ' + character_color + ";");
+        } else if (_lisa_store['files'][this.id]['rdata'][rindex]["bbox"] == "text") {
+          svg_shape.setAttributeNS(null, 'style', 'stroke: ' + text_box_color + ";");
+        }
+
+      } else {
+        if (_lisa_store['files'][this.id]['rdata'][x]["bbox"] == "text" || _lisa_store['files'][this.id]['rdata'][y]["bbox"] == "text") {
+          var colour = text_to_chars_color;
+        } else {
+          var colour = char_to_char_color;
+        }
+        // line
+        var x1 = _lisa_store['files'][this.id]['regions'][rindex][2] / _lisa_item_scale[this.id];
+        var y1 = _lisa_store['files'][this.id]['regions'][rindex][3] / _lisa_item_scale[this.id];
+        var x2 = _lisa_store['files'][this.id]['regions'][rindex][4] / _lisa_item_scale[this.id];
+        var y2 = _lisa_store['files'][this.id]['regions'][rindex][5] / _lisa_item_scale[this.id];
+
+        _lisa_svg_store[this.id].push([ x, y, x1, y1, x2, y2 ]);
+
+        var svg_shape = document.createElementNS(_lisa_svg_ns, 'line');
+        svg_shape.setAttributeNS(null, 'x1',x1);
+        svg_shape.setAttributeNS(null, 'y1',y1);
+        svg_shape.setAttributeNS(null, 'x2',x2);
+        svg_shape.setAttributeNS(null, 'y2',y2);
+        svg_shape.setAttributeNS(null, 'stroke', colour);
+        svg_shape.setAttributeNS(null, 'stroke-width', '.2em');
+        if (colour == char_to_char_color && _lisa_chars_to_chars_lines_hidden) {
+          svg_shape.classList.add("_lisa_hide");
+        }
+        if (colour == text_to_chars_color && _lisa_text_to_chars_lines_hidden) {
+          svg_shape.classList.add("_lisa_hide");
+        }
+
+      }
+      svg_shape.setAttributeNS(null, 'id', this.id + '_' + rindex);
+
+
+      svg.appendChild(svg_shape);
+    }
+  }
+
+  _lisa_toggle_charater_region_ids(!_lisa_characters_hidden);
+
+  // item toolbar and metadata
+  var item_caption_container = document.createElement('figcaption');
+  var item_toolbar_container = document.createElement('div');
+  item_toolbar_container.setAttribute('id', 'item_toolbar_container');
+  item_toolbar_container.setAttribute('style', 'width:' + item_visible_size[0] + 'px;');
+
+  switch(this.nodeName) {
+  case 'VIDEO':
+    this.setAttribute('controls', '');
+
+    // These commented 2 lines will replace the builtin controls with
+    // a single Play button under the video.
+    // this.removeAttribute('controls');
+    // item_toolbar_container.appendChild(_lisa_construct_play_button(this));
+
+    if(_lisa_store['files'][this.id]['regions'].length) {
+      if(_lisa_store['files'][this.id]['regions'][0].length === 5) {
+        var show_frame_region = document.createElement('button');
+        show_frame_region.innerHTML = 'Show Region';
+        show_frame_region.addEventListener('click', function(e) {
+          this.currentTime = _lisa_store['files'][this.id]['regions'][0][4];
+        }.bind(this));
+        item_toolbar_container.appendChild(show_frame_region);
+      }
+    }
+    break;
+  case 'AUDIO':
+  case 'IMG':
+    break;
+  }
+
+  var item_metadata_container = document.createElement('div');
+  item_metadata_container.setAttribute('id', 'item_metadata_container');
+  item_metadata_container.setAttribute('style', 'width:' + item_visible_size[0] + 'px;');
+  for(var aindex in _lisa_store['config']['show_attributes']['file']) {
+    var aid = _lisa_store['config']['show_attributes']['file'][aindex];
+    var ainput = _lisa_file_attribute_input_html(this.id, aid);
+    ainput.setAttribute('data-aid', aid);
+    //ainput.addEventListener('change', _lisa_region_attribute_onchange);
+    item_metadata_container.appendChild(ainput);
+  }
+
+  var br = document.createElement('br');
+  item_caption_container.appendChild(item_toolbar_container);
+  item_caption_container.appendChild(br);
+  item_caption_container.appendChild(item_metadata_container);
+  this.parentNode.appendChild(item_caption_container);
+}
+
+function _lisa_on_item_error(e) {
+  if(!_lisa_has_load_error_occured) {
+    _lisa_has_load_error_occured = true;
+    if(_lisa_store['config']['file_src_prefix'] === '') {
+      _lisa_log('Failed to load some files. Press <span class="_lisa_key">f</span> to edit the absolute path location of these files.', 20000);
+    } else {
+      _lisa_log('Failed to load some files. The absolute path location is currently set to [' + _lisa_store['config']['file_src_prefix'] + ']. Press <span class="_lisa_key">f</span> to edit the path location of files.', 20000);
+    }
+    var item_label = document.createElement('span');
+    item_label.innerHTML = parseInt(this.id) + ' : Error loading file';
+    this.parentNode.appendChild(item_label);
+  }
+}
+
+function _lisa_img_keydown_handler(e) {
+  if(e.target.type === 'text') {
+    return; // don't handle text input
+  }
+  if(e.key === '?') {
+    e.preventDefault();
+    var window_features = 'toolbar=no,menubar=no,location=no,resizable=yes,scrollbars=yes,status=no';
+    window_features += ',width=800,height=600';
+    var keyboard_shortcut_window = window.open('', 'LISA Keyboard Shortcuts', window_features);
+    keyboard_shortcut_window.document.body.innerHTML = _lisa_keyboard_shortcut_html_str;
+    _lisa_log('Showing keyboard shortcuts in a new browser window. If required by your browser, you must allow pop-up windows.');
+    return;
+  }
+
+  if(e.key == 'q') {
+    e.preventDefault();
+    _lisa_graph_mode = !_lisa_graph_mode;
+    var graph_mode_status = _lisa_graph_mode ? "ON" : "OFF";
+    _lisa_log('Graph mode: ' + graph_mode_status);
+    _lisa_hide_region_attributes();
+    _lisa_clear_existing_region_sel();
+    if(_lisa_state_id === _LISA_RINPUT_STATE.REGION_CONNECTION_ONGOING) {
+      var line = document.getElementById(_LISA_TMP_REGION_ID);
+      line.remove();
+    }
+    _lisa_set_state(_LISA_RINPUT_STATE.IDLE);
+    return
+  }
+
+  if(e.key === 's') {
+    if(e.ctrlKey) {
+      e.preventDefault();
+      _lisa_project_save();
+    } else {
+      _lisa_show_annotation_stat().then(function() {
+        _lisa_log('Showing metadata summary in a new browser window');
+      }, function(err) {
+        _lisa_log('Failed to show metadata summary: ' + err);
+      });
+    }
+  }
+
+  // 'c' for commit or cloud ('s' is already taken for "save" to local
+  // file.  'p' which could be used for "push" is already being used
+  // for "previous" page).
+  if (e.ctrlKey && e.key === 'c') {
+    e.preventDefault();
+    _lisa_save_shared_project();
+  }
+
+  if(e.key === 'h') {
+    if(e.ctrlKey) {
+      e.preventDefault();
+      _lisa_show_only_annotated_entries = !_lisa_show_only_annotated_entries;
+      _lisa_show_file_list();
+      return;
+    }
+  }
+
+  if(e.ctrlKey && e.key === '[') {
+    _lisa_toggle_regions("character");
+
+  }
+  if (e.ctrlKey && e.key === ']') {
+    _lisa_toggle_regions("text");
+  }
+  if (e.ctrlKey && e.key === ',') {
+    _lisa_toggle_regions("text_to_chars");
+  }
+  if (e.ctrlKey && e.key === '.') {
+    _lisa_toggle_regions("chars_to_chars");
+  }
+  if (e.ctrlKey && e.key === '/') {
+      _lisa_toggle_charater_region_ids(_lisa_bbox_labels_hidden);
+      _lisa_bbox_labels_hidden = !_lisa_bbox_labels_hidden;
+  }
+
+  
+  if(e.key === 'Backspace' || e.key === 'Delete') {
+    e.preventDefault();
+    _lisa_hide_region_attributes();
+    _lisa_del_region();
+    if (_lisa_state_id == _LISA_RINPUT_STATE.REGION_CONNECTION_ONGOING) {
+      var line = document.getElementById(_LISA_TMP_REGION_ID);
+      line.remove();
+    }
+    if (!_lisa_bbox_labels_hidden) {
+      _lisa_toggle_charater_region_ids(false);
+      _lisa_toggle_charater_region_ids(true);
+    }
+    _lisa_set_state( _LISA_RINPUT_STATE.IDLE );
+    return;
+  }
+
+  if(e.key === 'ArrowRight' || e.key === 'ArrowLeft' ||
+     e.key === 'ArrowUp' || e.key === 'ArrowDown' ) {
+    if(_lisa_sel_item === null) {
+      if(e.key === 'ArrowRight') {
+        e.preventDefault();
+        _lisa_project_show_next();
+      } else {
+        if(e.key === 'ArrowLeft') {
+          e.preventDefault();
+          _lisa_project_show_prev();
+        }
+      }
+      return;
+    }
+    e.preventDefault();
+    var dx = 0;
+    var dy = 0;
+    switch(e.key) {
+    case 'ArrowRight':
+      dx = 1;
+      break;
+    case 'ArrowLeft':
+      dx = -1;
+      break;
+    case 'ArrowUp':
+      dy = -1;
+      break;
+    case 'ArrowDown':
+      dy = 1;
+      break;
+    }
+    if(e.shiftKey) {
+      dx = dx * 10;
+      dy = dy * 10;
+    }
+    _lisa_move_region_svg(dx, dy);
+    _lisa_move_region(dx, dy);
+    return;
+  }
+
+  // if(e.key === 'n') {
+  //   e.preventDefault();
+  //   _lisa_project_show_next();
+  //   return;
+  // }
+  // if(e.key === 'p') {
+  //   e.preventDefault();
+  //   _lisa_project_show_prev();
+  //   return;
+  // }
+
+  // if(e.key === 'f') {
+  //   e.preventDefault();
+  //   var new_prefix = window.prompt('Enter file path (e.g. /data/images/)', _lisa_store['config']['file_src_prefix']);
+  //   if(new_prefix !== _lisa_store['config']['file_src_prefix'] &&
+  //      new_prefix !== null) {
+  //     _lisa_store['config']['file_src_prefix'] = new_prefix.trim();
+  //     _lisa_show_file_list();
+  //   }
+  // }
+  // if(e.key === 'm') {
+  //   e.preventDefault();
+  //   if(_lisa_store['files'].length) {
+  //     if(_lisa_store['config']['navigation_from'] !== -1 &&
+  //        _lisa_store['config']['navigation_to'] !== -1) {
+  //       var current_page_size = _lisa_store['config']['navigation_to'] - _lisa_store['config']['navigation_from'];
+  //       var new_page_size = window.prompt('Enter number of file files to show in each page', current_page_size);
+  //       if(new_page_size > 0) {
+  //         _lisa_store['config']['navigation_to'] = _lisa_store['config']['navigation_from'] + new_page_size;
+  //         _lisa_show_file_list(_lisa_store['config']['navigation_from']);
+  //       }
+  //     }
+  //   } else {
+  //     _lisa_log('Cannot set the page size for empty project');
+  //   }
+  // }
+
+  // if(e.key === 'g') {
+  //   if(e.ctrlKey) {
+  //     e.preventDefault();
+  //     if(_lisa_store['files'].length) {
+  //       var jump_id = window.prompt('Jump to the following file index (value range from 0 to ' + (_lisa_store['files'].length - 1) + ')', _lisa_store['config']['navigation_from']);
+  //       jump_id = jump_id;
+  //       if(jump_id >= 0 && jump_id < _lisa_store['files'].length) {
+  //         _lisa_show_file_list(jump_id);
+  //       }
+  //     } else {
+  //       _lisa_log('This project does not contain any files yet.');
+  //     }
+  //     return;
+  //   }
+  // }
+
+  // if(e.key === 'e') {
+  //   if(e.ctrlKey) {
+  //     e.preventDefault();
+  //     if(_lisa_store['files'].length) {
+  //       var export_format = window.prompt('Enter export format [e.g. CSV, COCO]', 'COCO');
+  //       switch(export_format) {
+  //       case 'COCO':
+  //       case 'coco':
+  //         var export_blob = _lisa_export_coco();
+  //         var filename = 'lisa_coco_' + _lisa_store['project']['project_id'].substr(0,4) + '_' + _lisa_current_timestamp() + '.json';
+  //         _lisa_save_data_to_local_file(export_blob, filename);
+  //         break;
+  //       case 'CSV':
+  //       case 'csv':
+  //         var export_blob = _lisa_export_csv();
+  //         var filename = 'lisa_csv_' + _lisa_store['project']['project_id'].substr(0,4) + '_' + _lisa_current_timestamp() + '.json';
+  //         _lisa_save_data_to_local_file(export_blob, filename);
+  //         break;
+  //       case null:
+  //         return;
+  //       default:
+  //         _lisa_log('Unknown export format: ' + export_format);
+  //       }
+  //     } else {
+  //       _lisa_log('This project does not contain any files yet.');
+  //     }
+  //     return;
+  //   }
+  // }
+
+  // if(e.key === 'a') {
+  //   e.preventDefault();
+  //   var new_project_name = window.prompt('Enter project name', _lisa_store['project']['project_name']);
+  //   if(new_project_name !== '' &&
+  //      new_project_name !== _lisa_store['project']['project_name']) {
+  //     _lisa_store['project']['project_name'] = new_project_name;
+  //     _lisa_log('Project name updated to [' + _lisa_store['project']['project_name'] + ']');
+  //   }
+  //   return;
+  // }
+
+  // zoom
+  // if(e.key === '-' || e.key === '+' || e.key === '0') {
+  //   console.log(e)
+  //   if(e.ctrlKey) {
+  //     console.log("browser default zoom")
+  //     return; // do not block browser's default zoom
+  //   }
+  //   e.preventDefault();
+  //   var new_height = _lisa_store['config']['item_height_in_pixel'];
+  //   switch(e.key) {
+  //   case '-':
+  //     new_height = new_height - _LISA_ITEM_HEIGHT_INCREMENT;
+  //     if(new_height < _LISA_MIN_IMAGE_HEIGHT) {
+  //       _lisa_log('Cannot set image height lower than ' + _LISA_MIN_IMAGE_HEIGHT + ' pixels');
+  //       return;
+  //     }
+  //     break;
+  //   case '+':
+  //     new_height = new_height + _LISA_ITEM_HEIGHT_INCREMENT;
+  //     if(new_height > _LISA_MAX_IMAGE_HEIGHT) {
+  //       _lisa_log('Cannot set image height higher than ' + _LISA_MAX_IMAGE_HEIGHT + ' pixels');
+  //       return;
+  //     }
+  //     break;
+  //   case '0':
+  //     new_height = _LISA_DEFAULT_ITEM_HEIGHT;
+  //     break;
+  //   }
+  //   _lisa_store['config']['item_height_in_pixel'] = new_height;
+  //   _lisa_show_file_list(_lisa_store['config']['navigation_from']);
+  //   _lisa_log('Updated image height to ' + _lisa_store['config']['item_height_in_pixel'] + ' pixels.');
+  //   return;
+  // }
+
+  if(e.key === 'Escape') {
+    e.preventDefault();
+    _lisa_hide_region_attributes();
+    _lisa_clear_existing_region_sel();
+    if (_lisa_state_id == _LISA_RINPUT_STATE.REGION_CONNECTION_ONGOING) {
+      var line = document.getElementById(_LISA_TMP_REGION_ID);
+      line.remove();
+    }
+    _lisa_set_state( _LISA_RINPUT_STATE.IDLE );
+    _lisa_set_state( _LISA_RINPUT_STATE.IDLE );
+    return;
+  }
+}
+
+function _lisa_img_mousedown_handler(e) {
+  if (e.button !== 0) // Ignore non-main button (see #18)
+    return;
+
+  e.preventDefault();
+  _lisa_user_input_pts = [e.offsetX, e.offsetY];
+
+  if ( _lisa_state_id === _LISA_RINPUT_STATE.IDLE ) {
+    // is this mousedown on a line
+    _lisa_last_clicked_rindex = _lisa_is_point_on_line(this.id, e.offsetX, e.offsetY);
+    if (_lisa_last_clicked_rindex != -1) {
+      _lisa_set_state( _LISA_RINPUT_STATE.REGION_SELECT_OR_DRAW_POSSIBLE );
+    } else {
+    // is this mousedown inside a region?
+    _lisa_last_clicked_rindex = _lisa_is_point_inside_existing_regions(this.id, e.offsetX, e.offsetY);
+    if ( _lisa_last_clicked_rindex === -1 ) {
+        if (!_lisa_graph_mode) {
+        var svg;
+        if(this.parentNode.children.length === _LISA_ITEM_SVG_OFFSET) {
+          // initialize svg container
+          svg = document.createElementNS(_lisa_svg_ns, 'svg');
+          svg.setAttributeNS(null, 'viewBox', '0 0 ' + this.width + ' ' + this.height);
+          svg.setAttributeNS(null, 'style', 'width:' + this.width + 'px; height:' + this.height + 'px;');
+          this.parentNode.appendChild(svg);
+        } else {
+          svg = this.parentNode.children[_LISA_ITEM_SVG_OFFSET];
+        }
+        // intialize a temporary rectangle to show progress of region draw operation
+        var rect = document.createElementNS(_lisa_svg_ns, 'rect');
+        rect.setAttributeNS(null, 'id', _LISA_TMP_REGION_ID);
+        rect.setAttributeNS(null, 'x', _lisa_user_input_pts[0]);
+        rect.setAttributeNS(null, 'y', _lisa_user_input_pts[1]);
+        rect.setAttributeNS(null, 'width', '0');
+        rect.setAttributeNS(null, 'height', '0');
+        svg.appendChild(rect);
+
+        _lisa_active_item_id = this.id;
+        _lisa_set_state( _LISA_RINPUT_STATE.REGION_DRAW_ONGOING );
+      }
+    } else {
+      // two possibilities:
+      // 1. Draw region inside an existing region
+      // 2. Select the region
+      if (_lisa_graph_mode) {
+        var svg;
+        if(this.parentNode.children.length === _LISA_ITEM_SVG_OFFSET) {
+          // initialize svg container
+          svg = document.createElementNS(_lisa_svg_ns, 'svg');
+          svg.setAttributeNS(null, 'viewBox', '0 0 ' + this.width + ' ' + this.height);
+          svg.setAttributeNS(null, 'style', 'width:' + this.width + 'px; height:' + this.height + 'px;');
+          this.parentNode.appendChild(svg);
+        } else {
+          svg = this.parentNode.children[_LISA_ITEM_SVG_OFFSET];
+        }
+        _lisa_set_state( _LISA_RINPUT_STATE.REGION_CONNECTION_ONGOING );
+        var newLine = document.createElementNS(_lisa_svg_ns, 'line');
+        newLine.setAttributeNS(null, 'id',_LISA_TMP_REGION_ID);
+        newLine.setAttributeNS(null, 'x1',_lisa_user_input_pts[0]);
+        newLine.setAttributeNS(null, 'y1',_lisa_user_input_pts[1]);
+        newLine.setAttributeNS(null, 'x2',_lisa_user_input_pts[0]);
+        newLine.setAttributeNS(null, 'y2',_lisa_user_input_pts[1]);
+        newLine.setAttributeNS(null, 'stroke', 'rgb(215, 255, 123)');
+        newLine.setAttributeNS(null, 'stroke-width', '.2em');
+        svg.appendChild(newLine);
+        return;
+      }
+      else {
+        _lisa_set_state( _LISA_RINPUT_STATE.REGION_SELECT_OR_DRAW_POSSIBLE );
+      }
+    }
+  }}
+
+  if (_lisa_state_id == _LISA_RINPUT_STATE.REGION_CONNECTION_ONGOING) {
+    var line_start = _lisa_last_clicked_rindex;
+    var line_end = _lisa_is_point_inside_existing_regions(this.id, e.offsetX, e.offsetY);
+    var start_type = _lisa_store['files'][this.id]['rdata'][line_start]["bbox"];
+    var line_already_exists = false;
+    if (line_end != -1) {
+      var end_type = _lisa_store['files'][this.id]['rdata'][line_end]["bbox"];
+      for (var i = 0; i < _lisa_store['files'][this.id]['regions'].length; i++) {
+        if (_lisa_store['files'][this.id]['regions'][i].length == 6) {
+          if (_lisa_store['files'][this.id]['regions'][i][0] == line_start && _lisa_store['files'][this.id]['regions'][i][1] == line_end || 
+            _lisa_store['files'][this.id]['regions'][i][1] == line_start && _lisa_store['files'][this.id]['regions'][i][0] == line_end)
+            {
+            line_already_exists = true;
+            break;
+          }
+        }
+      }
+    }
+    
+    _lisa_last_clicked_rindex = line_end;
+    // TODO check for duplicates (i.e. if a connection already exists don't add this line)
+    if (_lisa_last_clicked_rindex === -1 || _lisa_last_clicked_rindex === line_start || (start_type == "text" && end_type == "text") || (line_start == line_end) || line_already_exists) {
+      _lisa_set_state( _LISA_RINPUT_STATE.IDLE );
+      var line = document.getElementById(_LISA_TMP_REGION_ID);
+      line.remove();
+    }
+    else {
+      // _lisa_sel_region_for_connection(this, line_end);
+      // // sleep for 0.5 seconds
+      // async function sleep_and_clear_existing_regions() {
+      //     await new Promise(r => setTimeout(r, 500));
+      //     _lisa_clear_existing_region_sel_for_connection()
+      // }
+      // sleep_and_clear_existing_regions(500)
+      var line = document.getElementById(_LISA_TMP_REGION_ID);
+      var ptsA = [parseFloat(line.getAttributeNS(null, 'x1')), parseFloat(line.getAttributeNS(null, 'y1'))];
+      var ptsB = [parseFloat(line.getAttributeNS(null, 'x2')), parseFloat(line.getAttributeNS(null, 'y2'))];
+      var rindex = _lisa_add_connection(this.id, line_start, line_end, ptsA, ptsB);
+
+      line.setAttributeNS(null, 'id', this.id + '_' + rindex);
+      var colour = (start_type == "text" || end_type == "text") ? text_to_chars_color : char_to_char_color;
+      line.setAttributeNS(null, 'stroke', colour);
+      if (colour == char_to_char_color && _lisa_chars_to_chars_lines_hidden) {
+        line.classList.add("_lisa_hide");
+      }
+      if (colour == text_to_chars_color && _lisa_text_to_chars_lines_hidden) {
+        line.classList.add("_lisa_hide");
+      }
+      if (!_lisa_bbox_labels_hidden) {
+        _lisa_toggle_charater_region_ids(false);
+        _lisa_toggle_charater_region_ids(true);
+      }
+    }
+    _lisa_set_state( _LISA_RINPUT_STATE.IDLE );
+  }
+
+  if ( _lisa_state_id === _LISA_RINPUT_STATE.REGION_SELECTED ) {
+    if(_lisa_sel_item.id !== this.id) {
+      // user clicked on a region in another image while a region is already selected in another image
+      // unselect existing region
+      _lisa_clear_existing_region_sel();
+      _lisa_set_state( _LISA_RINPUT_STATE.REGION_SELECT_OR_DRAW_POSSIBLE );
+    }
+
+    // check if mousedown was on edge
+    _lisa_last_edge = _lisa_is_on_region_edge(this.id, e.offsetX, e.offsetY); // [rindex, edge_index]
+    if(_lisa_last_edge[0] === -1) {
+      _lisa_last_clicked_rindex = _lisa_is_point_inside_existing_regions(this.id, e.offsetX, e.offsetY);
+      if(_lisa_last_clicked_rindex === -1) {
+        // mousedown was outside any region, indicates unselect operation
+        _lisa_set_state( _LISA_RINPUT_STATE.REGION_UNSELECT_ONGOING );
+      } else {
+        if(_lisa_sel_rindex === _lisa_last_clicked_rindex) {
+          _lisa_set_state( _LISA_RINPUT_STATE.REGION_MOVE_ONGOING );
+          _lisa_hide_region_attributes();
+        } else {
+          _lisa_set_state( _LISA_RINPUT_STATE.REGION_UNSELECT_ONGOING );
+        }
+      }
+    } else {
+      if(_lisa_last_edge[0] === _lisa_sel_rindex) {
+        // edge of selected region clicked, indicates resize operation
+        _lisa_set_state( _LISA_RINPUT_STATE.REGION_RESIZE_ONGOING );
+        _lisa_hide_region_attributes();
+      } else {
+        // edge of non-selected region was clicked, indicates selection of another region
+        _lisa_set_state( _LISA_RINPUT_STATE.REGION_UNSELECT_ONGOING );
+      }
+    }
+  }
+}
+
+function dfs_helper(start_index, list_of_edges, visited) {
+  visited[start_index] = true;
+  var path = [start_index];
+  for (var i = 0; i < list_of_edges.length; i++) {
+    var a = list_of_edges[i][0];
+    var b = list_of_edges[i][1];
+    if ((a == start_index && !visited[b]) || (b == start_index && !visited[a])) {
+      var next_index = a == start_index ? b : a;
+      var next_path = dfs_helper(next_index, list_of_edges, visited, path);
+      path = path.concat(next_path);
+    }
+  }
+  return path;
+}
+
+function dfs(fileid, current_bbox_index) {
+  var list_of_edges = [];
+  var visited = [];
+  for (var i = 0; i < _lisa_store['files'][fileid]['regions'].length; i++) {
+    visited.push(false);
+    if (_lisa_store['files'][fileid]['regions'][i].length == 6) {
+      var a = _lisa_store['files'][fileid]['regions'][i][0];
+      var b = _lisa_store['files'][fileid]['regions'][i][1];
+      if (_lisa_store['files'][fileid]['rdata'][a]["bbox"] == "character" && _lisa_store['files'][fileid]['rdata'][b]["bbox"] == "character") {
+        list_of_edges.push([a, b]);
+      }
+    }
+  }
+  return dfs_helper(current_bbox_index, list_of_edges, visited);
+}
+
+function _lisa_img_mousemove_handler(e) {
+  e.preventDefault();
+  _lisa_last_mouseover_item_id = this.id;
+
+  if(_lisa_state_id === _LISA_RINPUT_STATE.IDLE) {
+    _lisa_clear_existing_region_sel_for_connection();
+    var current_region_index = _lisa_is_point_inside_existing_regions(this.id, e.offsetX, e.offsetY);
+    if (current_region_index === -1) {
+      return;
+    }
+    if (_lisa_store['files'][this.id]['regions'][current_region_index].length != 4) return;
+    if (_lisa_store['files'][this.id]['rdata'][current_region_index]["bbox"] != "character") {
+      _lisa_sel_region_for_connection(this, current_region_index);
+      return;
+    }
+    var indices_to_highlight = dfs(this.id, current_region_index);
+    for (var i = 0; i < indices_to_highlight.length; i++) {
+      var index = indices_to_highlight[i];
+      _lisa_sel_region_for_connection(this, index);
+    }
+    return;
+  }
+
+  if(_lisa_state_id === _LISA_RINPUT_STATE.REGION_SELECTED) {
+    if(this.id !== _lisa_sel_item.id) {
+      return;
+    }
+    var edge = _lisa_is_on_region_edge(this.id, e.offsetX, e.offsetY); // [rindex, edge_index]
+    if(edge[0] !== _lisa_sel_rindex ||
+       edge[0] === -1) {
+      // mouse over some other non-selected region
+      this.style.cursor = 'default';
+      return;
+    }
+    switch(edge[1]) {
+    case 1:
+    case 3:
+      this.style.cursor = 'ns-resize';
+      break;
+    case 2:
+    case 4:
+      this.style.cursor = 'ew-resize';
+      break;
+    case 5:
+    case 7:
+      this.style.cursor = 'nwse-resize';
+      break;
+    case 6:
+    case 8:
+      this.style.cursor = 'nesw-resize';
+      break;
+    }
+
+    return;
+  }
+
+  if(_lisa_state_id === _LISA_RINPUT_STATE.REGION_DRAW_ONGOING) {
+    if(this.id !== _lisa_active_item_id) {
+      return;
+    }
+    var snapped_xy = _lisa_snap_to_edge_if_possible(e.offsetX, e.offsetY, e.target.width, e.target.height);
+    var pts = [ _lisa_user_input_pts[0], _lisa_user_input_pts[1], snapped_xy[0], snapped_xy[1]];
+    var norm_pts = _lisa_normalize_user_input_pts(pts);
+    var rect = document.getElementById(_LISA_TMP_REGION_ID);
+    rect.setAttributeNS(null, 'x', norm_pts[0]);
+    rect.setAttributeNS(null, 'y', norm_pts[1]);
+    rect.setAttributeNS(null, 'width',  norm_pts[2] - norm_pts[0]);
+    rect.setAttributeNS(null, 'height', norm_pts[3] - norm_pts[1]);
+    return;
+  }
+
+  if(_lisa_state_id === _LISA_RINPUT_STATE.REGION_MOVE_ONGOING) {
+    var dx = e.offsetX - _lisa_user_input_pts[0];
+    var dy = e.offsetY - _lisa_user_input_pts[1];
+    _lisa_move_region_svg(dx, dy);
+    return;
+  }
+  
+  if (_lisa_state_id === _LISA_RINPUT_STATE.REGION_CONNECTION_ONGOING) {
+    _lisa_clear_existing_region_sel_for_connection();
+    var line = document.getElementById(_LISA_TMP_REGION_ID);
+    line.setAttributeNS(null, 'x2', e.offsetX);
+    line.setAttributeNS(null, 'y2', e.offsetY);
+    var current_region_index = _lisa_is_point_inside_existing_regions(this.id, e.offsetX, e.offsetY);
+    if (current_region_index === -1) {
+      return;
+    }
+    if (_lisa_store['files'][this.id]['regions'][current_region_index].length != 4) return;
+    if (_lisa_store['files'][this.id]['rdata'][current_region_index]["bbox"] != "character") return;
+    _lisa_sel_region_for_connection(this, current_region_index);
+    return;
+  }
+
+  if(_lisa_state_id === _LISA_RINPUT_STATE.REGION_RESIZE_ONGOING) {
+    var snapped_xy = _lisa_snap_to_edge_if_possible(e.offsetX, e.offsetY, e.target.width, e.target.height);
+    _lisa_resize_region_svg(_lisa_last_edge[0], _lisa_last_edge[1], snapped_xy[0], snapped_xy[1]);
+    return;
+  }
+}
+
+
+function discard_temporary_region(rect) {
+  if(rect) {
+    rect.remove();
+  }
+  _lisa_log('Discarded degenerate region');
+}
+
+
+function add_feature_point(item, rect) {
+  // promote temporary rectangular region to feature point.
+  const norm_pts = _lisa_normalize_user_input_pts(_lisa_user_input_pts);
+  const fp = [norm_pts[0], norm_pts[1]];
+  const rindex = _lisa_add_img_region(item.id, fp);
+
+  const svg = item.parentNode.children[_LISA_ITEM_SVG_OFFSET];
+
+  let circle = document.createElementNS(_lisa_svg_ns, 'circle');
+  circle.setAttributeNS(null, 'id', item.id + '_' + rindex);
+  circle.setAttribute('cx', rect.getAttribute('x'));
+  circle.setAttribute('cy', rect.getAttribute('y'));
+  circle.setAttribute('r', _LISA_POINT_RADIUS);
+  svg.replaceChild(circle, rect);
+
+}
+
+
+function _lisa_img_mouseup_handler(e) {
+  if (e.button !== 0) // Ignore non-main button (see #18)
+    return;
+
+  e.preventDefault();
+
+  if(_lisa_state_id === _LISA_RINPUT_STATE.REGION_DRAW_ONGOING) {
+    if(this.id !== _lisa_active_item_id) {
+      // implies mousedown in one image while mouseup in another image
+      _lisa_user_input_pts = [];
+      _lisa_set_state( _LISA_RINPUT_STATE.IDLE );
+      _lisa_active_item_id = -1;
+      var rect = document.getElementById(_LISA_TMP_REGION_ID);
+      if(rect) {
+        rect.remove();
+      }
+      return;
+    }
+
+    // final region drawing operation
+    _lisa_user_input_pts.push(e.offsetX, e.offsetY);
+    if(_lisa_are_user_input_pts_very_near()) {
+      let rect = document.getElementById(_LISA_TMP_REGION_ID);
+      if (_LISA_FEATURE_FEATURE_POINTS)
+        add_feature_point(this, rect);
+      else
+        discard_temporary_region(rect);
+    } else {
+      var norm_pts = _lisa_normalize_user_input_pts(_lisa_user_input_pts);
+      var rindex = _lisa_add_img_region(this.id, norm_pts);
+
+      // promote temp. region to a permanent region and update (width,height) based on mouseup_xy
+      var rect = document.getElementById(_LISA_TMP_REGION_ID);
+      rect.setAttributeNS(null, 'id', this.id + '_' + rindex);
+      var img_to_svg_scale = 1 / _lisa_item_scale[this.id];
+      var svg_width  = Math.round(_lisa_svg_store[this.id][rindex][2] * img_to_svg_scale);
+      var svg_height = Math.round(_lisa_svg_store[this.id][rindex][3] * img_to_svg_scale);
+      rect.setAttributeNS('null', 'width', svg_width);
+      rect.setAttributeNS('null', 'height', svg_height);
+    }
+
+
+    _lisa_user_input_pts = [];
+    _lisa_set_state( _LISA_RINPUT_STATE.IDLE );
+    return;
+  }
+
+  if(_lisa_state_id === _LISA_RINPUT_STATE.REGION_SELECT_OR_DRAW_POSSIBLE) {
+    _lisa_user_input_pts.push(e.offsetX, e.offsetY);
+    if(_lisa_are_user_input_pts_same()) {
+      _lisa_clear_existing_region_sel();
+      _lisa_sel_region(this, _lisa_last_clicked_rindex);
+      _lisa_user_input_pts = [];
+      _lisa_set_state( _LISA_RINPUT_STATE.REGION_SELECTED );
+    } else {
+      // this could draw region, but we don't need it now
+      _lisa_user_input_pts = [];
+      _lisa_set_state( _LISA_RINPUT_STATE.IDLE );
+    }
+    return;
+  }
+
+  if(_lisa_state_id === _LISA_RINPUT_STATE.REGION_MOVE_ONGOING) {
+    var dx = e.offsetX - _lisa_user_input_pts[0];
+    var dy = e.offsetY - _lisa_user_input_pts[1];
+    _lisa_move_region_svg(dx, dy);
+    _lisa_move_region(dx, dy);
+
+    _lisa_user_input_pts = [];
+    _lisa_set_state( _LISA_RINPUT_STATE.REGION_SELECTED );
+
+    return;
+  }
+
+  if(_lisa_state_id === _LISA_RINPUT_STATE.REGION_UNSELECT_ONGOING) {
+    _lisa_clear_existing_region_sel();
+    _lisa_user_input_pts = [];
+    _lisa_set_state(_LISA_RINPUT_STATE.IDLE);
+    return;
+  }
+
+  if(_lisa_state_id === _LISA_RINPUT_STATE.REGION_RESIZE_ONGOING) {
+    var snapped_xy = _lisa_snap_to_edge_if_possible(e.offsetX, e.offsetY, e.target.width, e.target.height);
+    _lisa_resize_region_svg(_lisa_last_edge[0], _lisa_last_edge[1], snapped_xy[0], snapped_xy[1]);
+    _lisa_resize_region(_lisa_last_edge[0], _lisa_last_edge[1], snapped_xy[0], snapped_xy[1]);
+    _lisa_user_input_pts = [];
+    _lisa_set_state( _LISA_RINPUT_STATE.REGION_SELECTED );
+    return;
+  }
+}
+
+function _lisa_img_dblclick_handler(e) {
+  if (e.button !== 0) // Ignore non-main button (see #18)
+    return;
+
+  e.preventDefault();
+  _lisa_sel_item = this;  // XXX: I feel this should be done elsewhere
+  // XXX: maybe if a region is selected, deleted that region instead
+  // of all regions?
+  _lisa_del_all_regions();
+  _lisa_set_state(_LISA_RINPUT_STATE.IDLE);
+  return;
+}
+
+//
+// region management
+//
+
+function pDistance(x, y, x1, y1, x2, y2) {
+
+  var A = x - x1;
+  var B = y - y1;
+  var C = x2 - x1;
+  var D = y2 - y1;
+
+  var dot = A * C + B * D;
+  var len_sq = C * C + D * D;
+  var param = -1;
+  if (len_sq != 0) //in case of 0 length line
+      param = dot / len_sq;
+
+  var xx, yy;
+
+  if (param < 0) {
+    xx = x1;
+    yy = y1;
+  }
+  else if (param > 1) {
+    xx = x2;
+    yy = y2;
+  }
+  else {
+    xx = x1 + param * C;
+    yy = y1 + param * D;
+  }
+
+  var dx = x - xx;
+  var dy = y - yy;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function _lisa_is_point_on_line(item_id, cx, cy) {
+  for(var i=0; i<_lisa_svg_store[item_id].length; ++i) {
+    const pts_count = _lisa_svg_store[item_id][i].length;
+    if (pts_count != 6) continue;
+    const x1 = _lisa_svg_store[item_id][i][2];
+    const y1 = _lisa_svg_store[item_id][i][3];
+    const x2 = _lisa_svg_store[item_id][i][4];
+    const y2 = _lisa_svg_store[item_id][i][5];
+    var dist = pDistance(cx, cy, x1, y1, x2, y2);
+    if (dist <= _LISA_EDGE_CLICK_TOL) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function _lisa_is_point_inside_existing_regions(item_id, cx, cy) {
+  var rect_ids = [];
+  for(var i=0; i<_lisa_svg_store[item_id].length; ++i) {
+    const pts_count = _lisa_svg_store[item_id][i].length;
+    if(pts_count === 2) {
+      const del1 = (cx - _lisa_svg_store[item_id][i][0]);
+      const del2 = (cy - _lisa_svg_store[item_id][i][1]);
+      const dist = Math.sqrt( del1*del1 + del2*del2 );
+      if(dist <= 2*_LISA_POINT_RADIUS) {
+        return i;
+      }
+    } else if (pts_count === 4) {
+      if(cx > (_lisa_svg_store[item_id][i][0]) &&
+         cx < (_lisa_svg_store[item_id][i][0] + _lisa_svg_store[item_id][i][2]) &&
+         cy > (_lisa_svg_store[item_id][i][1]) &&
+         cy < (_lisa_svg_store[item_id][i][1] + _lisa_svg_store[item_id][i][3])) {
+          rect_ids.push(i);
+      }
+    }
+  }
+  // return the smallest rectangle
+  var min_area = Infinity;
+  var min_index = -1
+  for (var i = 0; i < rect_ids.length; i++) {
+    var area = _lisa_svg_store[item_id][rect_ids[i]][2] * _lisa_svg_store[item_id][rect_ids[i]][3]
+    if (area < min_area) {
+      min_area = area
+      min_index = rect_ids[i]
+    }
+  }
+  return min_index;
+}
+
+function _lisa_are_user_input_pts_same() {
+  if(_lisa_user_input_pts.length === 4) {
+    if( Math.abs(_lisa_user_input_pts[0] - _lisa_user_input_pts[2]) < _LISA_MOUSE_CLICK_TOL &&
+        Math.abs(_lisa_user_input_pts[1] - _lisa_user_input_pts[3]) < _LISA_MOUSE_CLICK_TOL ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function _lisa_are_user_input_pts_very_near() {
+  if(_lisa_user_input_pts.length === 4) {
+    if( Math.abs(_lisa_user_input_pts[0] - _lisa_user_input_pts[2]) < _LISA_RECT_MIN_SIZE ||
+        Math.abs(_lisa_user_input_pts[1] - _lisa_user_input_pts[3]) < _LISA_RECT_MIN_SIZE ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// returns [region_index, edge_id] where rectangle edge defined as
+// 5  1  6
+// 4     2
+// 8  3  7
+function _lisa_is_on_region_edge(item_id, cx, cy) {
+  if(_lisa_svg_store.hasOwnProperty(item_id)) {
+    const region_count = _lisa_svg_store[item_id].length;
+    for(var i=0; i<region_count; ++i) {
+      const region_pts = _lisa_svg_store[item_id][i].length;
+      if(region_pts === 2 || region_pts === 6) {
+        // point or line regions cannot be resized
+        continue;
+      }
+
+      var x0 = _lisa_svg_store[item_id][i][0];
+      var y0 = _lisa_svg_store[item_id][i][1];
+      var x1 = x0 + _lisa_svg_store[item_id][i][2];
+      var y1 = y0 + _lisa_svg_store[item_id][i][3];
+
+      // corners
+      if( Math.abs(cx-x0) < _LISA_EDGE_CLICK_TOL &&
+          Math.abs(cy-y0) < _LISA_EDGE_CLICK_TOL ) {
+        return [i, 5];
+      }
+      if( Math.abs(cx-x0) < _LISA_EDGE_CLICK_TOL &&
+          Math.abs(cy-y1) < _LISA_EDGE_CLICK_TOL ) {
+        return [i, 8];
+      }
+      if( Math.abs(cx-x1) < _LISA_EDGE_CLICK_TOL &&
+          Math.abs(cy-y0) < _LISA_EDGE_CLICK_TOL ) {
+        return [i, 6];
+      }
+      if( Math.abs(cx-x1) < _LISA_EDGE_CLICK_TOL &&
+          Math.abs(cy-y1) < _LISA_EDGE_CLICK_TOL ) {
+        return [i, 7];
+      }
+
+      // edges
+      if( cy > y0 && cy < y1 ) {
+        if( Math.abs(x0-cx) < _LISA_EDGE_CLICK_TOL ) {
+          return [i, 4];
+        } else {
+          if( Math.abs(x1-cx) < _LISA_EDGE_CLICK_TOL ) {
+            return [i, 2];
+          }
+        }
+      }
+      if( cx > x0 && cx < x1 ) {
+        if( Math.abs(y0-cy) < _LISA_EDGE_CLICK_TOL ) {
+          return [i, 1];
+        } else {
+          if( Math.abs(y1-cy) < _LISA_EDGE_CLICK_TOL ) {
+            return [i, 3];
+          }
+        }
+      }
+    }
+  }
+  return [-1, -1];
+}
+
+function _lisa_svg_rect_get_edge_index(height, px, py) {
+  var edge_index = -1;
+  if ( py > _LISA_RECT_STROKE &&
+       py < (height - _LISA_RECT_STROKE)) {
+    if(px < _LISA_RECT_STROKE) {
+      edge_index = 4;
+    } else {
+      edge_index = 2;
+    }
+  } else {
+    if(py < _LISA_RECT_STROKE) {
+      edge_index = 1;
+    } else {
+      edge_index = 3;
+    }
+  }
+  return edge_index;
+}
+
+// ensures (x0,y0) < (x1,y1) in pts = [x0, y0, x1, y1]
+function _lisa_normalize_user_input_pts(pts) {
+  var norm_pts = [];
+  if( pts[0] > pts[2] ) {
+    if( pts[1] > pts[3] ) {
+      norm_pts = [ pts[2], pts[3], pts[0], pts[1] ];
+    } else {
+      norm_pts = [ pts[2], pts[1], pts[0], pts[3] ];
+    }
+  } else {
+    if( pts[1] > pts[3] ) {
+      norm_pts = [ pts[0], pts[3], pts[2], pts[1] ];
+    } else {
+      norm_pts = pts;
+    }
+  }
+  return norm_pts;
+}
+
+function _lisa_add_img_region(id, pts) {
+  const pts_count = pts.length;
+  var rindex = _lisa_store['files'][id]['regions'].length;
+  switch(pts_count) {
+  case 4:
+    // note: rectangular region coordinates are stored as [x, y, width, height]
+    _lisa_store['files'][id]['regions'].push([pts[0] * _lisa_item_scale[id],
+                                              pts[1] * _lisa_item_scale[id],
+                                              (pts[2] - pts[0]) * _lisa_item_scale[id],
+                                              (pts[3] - pts[1]) * _lisa_item_scale[id]]);
+    _lisa_svg_store[id].push([ pts[0], pts[1], pts[2] - pts[0], pts[3] - pts[1] ]);
+    break;
+  case 2:
+    // note: feature points are stored as [x, y]
+    _lisa_store['files'][id]['regions'].push([pts[0] * _lisa_item_scale[id],
+                                              pts[1] * _lisa_item_scale[id]]);
+    _lisa_svg_store[id].push([ pts[0], pts[1] ]);
+    break;
+  default:
+    console.error('cannot handle region defined using ' + pts_count + ' points');
+    return;
+  }
+
+  // initially, there are no attributes associated with this new region
+  _lisa_store['files'][id]['rdata'].push({
+    "bbox_type": "spoken_dialogue",
+    "bubble_tail": "tail_to_speaker",
+  });
+
+  return rindex;
+}
+
+function _lisa_add_connection(id, ridA, ridB, ptA, ptB) {
+    var rindex = _lisa_store['files'][id]['regions'].length;
+    _lisa_store['files'][id]['regions'].push([ridA, ridB, ptA[0] * _lisa_item_scale[id], ptA[1] * _lisa_item_scale[id], ptB[0] * _lisa_item_scale[id], ptB[1] * _lisa_item_scale[id]]);
+    _lisa_svg_store[id].push([ridA, ridB, ptA[0], ptA[1], ptB[0], ptB[1]]);
+    _lisa_store['files'][id]['rdata'].push({});
+   return rindex
+}
+
+function _lisa_update_img_region_attribute(id, rindex, aid, avalue) {
+  _lisa_store['files'][id]['rdata'][rindex][aid] = avalue;
+  var rect = _lisa_sel_item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children[_lisa_sel_rindex];
+  if (avalue == "text") {
+    rect.setAttributeNS(null, 'style', 'stroke: ' + text_box_color + ';');
+  }
+  else if (avalue == "character") {
+    rect.setAttributeNS(null, 'style', 'stroke: ' + character_color + ';');
+  }
+
+  _lisa_log('Update attribute of region ' + rindex + ' of file with id [' + id + '].');
+}
+
+function _lisa_update_img_file_attribute(id, aid, avalue) {
+  _lisa_store['files'][id]['fdata'][aid] = avalue;
+  _lisa_log('Update file attribute of file with id [' + id + '].');
+}
+
+function _lisa_snap_to_edge_if_possible(x, y, max_x, max_y) {
+  var sxy = [x, y];
+  if( x < _LISA_EDGE_SNAP_TOL ) {
+    sxy[0] = 0;
+  }
+  if( Math.abs(x - max_x) < _LISA_EDGE_SNAP_TOL ) {
+    sxy[0] = max_x - 1;
+  }
+  if( y < _LISA_EDGE_SNAP_TOL ) {
+    sxy[1] = 0;
+  }
+  if( Math.abs(y - max_y) < _LISA_EDGE_SNAP_TOL ) {
+    sxy[1] = max_y - 1;
+  }
+  return sxy;
+}
+
+function _lisa_resize_region(rindex, edge_index, x, y) {
+  var id = _lisa_sel_item.id;
+  var x0 = _lisa_svg_store[id][rindex][0];
+  var y0 = _lisa_svg_store[id][rindex][1];
+  var x1 = x0 + _lisa_svg_store[id][rindex][2];
+  var y1 = y0 + _lisa_svg_store[id][rindex][3];
+
+  switch(edge_index) {
+  case 7: // bottom-right corner
+    _lisa_store['files'][id]['regions'][rindex][2] = (x - x0) * _lisa_item_scale[id];
+    _lisa_store['files'][id]['regions'][rindex][3] = (y - y0) * _lisa_item_scale[id];
+
+    _lisa_svg_store[id][rindex][2] = (x - x0);
+    _lisa_svg_store[id][rindex][3] = (y - y0);
+    break;
+  case 5: // top-left corner
+    _lisa_store['files'][id]['regions'][rindex][0] = x * _lisa_item_scale[id];
+    _lisa_store['files'][id]['regions'][rindex][1] = y * _lisa_item_scale[id];
+    _lisa_store['files'][id]['regions'][rindex][2] = (x1 - x) * _lisa_item_scale[id];
+    _lisa_store['files'][id]['regions'][rindex][3] = (y1 - y) * _lisa_item_scale[id];
+
+    _lisa_svg_store[id][rindex][0] = x;
+    _lisa_svg_store[id][rindex][1] = y;
+    _lisa_svg_store[id][rindex][2] = x1 - x;
+    _lisa_svg_store[id][rindex][3] = y1 - y;
+    break;
+  case 6: // top-right corner
+    _lisa_store['files'][id]['regions'][rindex][1] = y * _lisa_item_scale[id];
+    _lisa_store['files'][id]['regions'][rindex][2] = (x - x0) * _lisa_item_scale[id];
+    _lisa_store['files'][id]['regions'][rindex][3] = (y1 - y) * _lisa_item_scale[id];
+
+    _lisa_svg_store[id][rindex][1] = y;
+    _lisa_svg_store[id][rindex][2] = x - x0;
+    _lisa_svg_store[id][rindex][3] = y1 - y;
+    break;
+  case 8: // bottom-left corner
+    _lisa_store['files'][id]['regions'][rindex][0] = x * _lisa_item_scale[id];
+    _lisa_store['files'][id]['regions'][rindex][2] = (x1 - x) * _lisa_item_scale[id];
+    _lisa_store['files'][id]['regions'][rindex][3] = (y - y0) * _lisa_item_scale[id];
+
+    _lisa_svg_store[id][rindex][0] = x;
+    _lisa_svg_store[id][rindex][2] = x1 - x;
+    _lisa_svg_store[id][rindex][3] = y - y0;
+    break;
+  case 1: // top edge
+    _lisa_store['files'][id]['regions'][rindex][1] = y * _lisa_item_scale[id];
+    _lisa_store['files'][id]['regions'][rindex][3] = (y1 - y) * _lisa_item_scale[id];
+    _lisa_svg_store[id][rindex][1] = y;
+    _lisa_svg_store[id][rindex][3] = y1 - y;
+    break;
+  case 3: // bottom edge
+    _lisa_store['files'][id]['regions'][rindex][3] = (y - y0) * _lisa_item_scale[id];
+    _lisa_svg_store[id][rindex][3] = y - y0;
+    break;
+  case 2: // right edge
+    _lisa_store['files'][id]['regions'][rindex][2] = (x - x0) * _lisa_item_scale[id];
+    _lisa_svg_store[id][rindex][2] = x - x0;
+    break;
+  case 4: // left edge
+    _lisa_store['files'][id]['regions'][rindex][0] = x * _lisa_item_scale[id];
+    _lisa_store['files'][id]['regions'][rindex][2] = (x1 - x) * _lisa_item_scale[id];
+    _lisa_svg_store[id][rindex][0] = x;
+    _lisa_svg_store[id][rindex][2] = x1 - x;
+    break;
+  }
+}
+
+function _lisa_resize_region_svg(rindex, edge_index, x, y) {
+  var x0 = _lisa_svg_store[_lisa_sel_item.id][rindex][0];
+  var y0 = _lisa_svg_store[_lisa_sel_item.id][rindex][1];
+  var x1 = x0 + _lisa_svg_store[_lisa_sel_item.id][rindex][2];
+  var y1 = y0 + _lisa_svg_store[_lisa_sel_item.id][rindex][3];
+
+  var rect = _lisa_sel_item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children[rindex];
+  switch(edge_index) {
+  case 7: // bottom-right corner
+    rect.setAttributeNS(null, 'width',  x - x0);
+    rect.setAttributeNS(null, 'height', y - y0);
+    break;
+  case 5: // top-left corner
+    rect.setAttributeNS(null, 'x', x);
+    rect.setAttributeNS(null, 'y', y);
+    rect.setAttributeNS(null, 'width',  x1 - x);
+    rect.setAttributeNS(null, 'height', y1 - y);
+    break;
+  case 6: // top-right corner
+    rect.setAttributeNS(null, 'y', y);
+    rect.setAttributeNS(null, 'width',  x - x0);
+    rect.setAttributeNS(null, 'height', y1 - y);
+    break;
+  case 8: // bottom-left corner
+    rect.setAttributeNS(null, 'x', x);
+    rect.setAttributeNS(null, 'width',  x1 - x);
+    rect.setAttributeNS(null, 'height', y - y0);
+    break;
+  case 1: // top edge
+    rect.setAttributeNS(null, 'y', y);
+    rect.setAttributeNS(null, 'height', y1 - y);
+    break;
+  case 3: // bottom edge
+    rect.setAttributeNS(null, 'height', y - y0);
+    break;
+  case 2: // right edge
+    rect.setAttributeNS(null, 'width', x - x0);
+    break;
+  case 4: // left edge
+    rect.setAttributeNS(null, 'x', x);
+    rect.setAttributeNS(null, 'width', x1 - x);
+    break;
+  }
+}
+
+function _lisa_move_region(dx, dy) {
+  var id = _lisa_sel_item.id;
+  var rindex = _lisa_sel_rindex;
+
+  // update image space coordinates
+  _lisa_store['files'][id]['regions'][rindex][0] += (dx * _lisa_item_scale[id]);
+  _lisa_store['files'][id]['regions'][rindex][1] += (dy * _lisa_item_scale[id]);
+
+  // update canvas space coordinates (i.e. svg)
+  _lisa_svg_store[id][rindex][0] += dx;
+  _lisa_svg_store[id][rindex][1] += dy;
+}
+
+function _lisa_move_region_svg(dx, dy) {
+  var svg_shape = _lisa_sel_item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children[_lisa_sel_rindex];
+  if(svg_shape.nodeName === 'circle') {
+    svg_shape.setAttributeNS(null, 'cx', _lisa_svg_store[_lisa_sel_item.id][_lisa_sel_rindex][0] + dx);
+    svg_shape.setAttributeNS(null, 'cy', _lisa_svg_store[_lisa_sel_item.id][_lisa_sel_rindex][1] + dy);
+  } else {
+    svg_shape.setAttributeNS(null, 'x', _lisa_svg_store[_lisa_sel_item.id][_lisa_sel_rindex][0] + dx);
+    svg_shape.setAttributeNS(null, 'y', _lisa_svg_store[_lisa_sel_item.id][_lisa_sel_rindex][1] + dy);
+  }
+}
+
+function _lisa_sel_region(item, rindex) {
+  _lisa_sel_item = item;
+  _lisa_sel_rindex = rindex;
+  _lisa_sel_item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children[_lisa_sel_rindex].classList.add('sel');
+  _lisa_show_region_attributes();
+}
+
+function _lisa_sel_region_for_connection(item, rindex) {
+  _lisa_sel_connection_item.push(item);
+  _lisa_sel_connection_rindex.push(rindex);
+  item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children[rindex].classList.add('sel');
+}
+
+function _lisa_clear_existing_region_sel_for_connection() {
+  for (var i = 0; i < _lisa_sel_connection_rindex.length; i++) {
+    try {
+      _lisa_sel_connection_item[i].parentNode.children[_LISA_ITEM_SVG_OFFSET].children[_lisa_sel_connection_rindex[i]].classList.remove('sel');
+    } catch {}
+  }
+  _lisa_sel_connection_item = [];
+  _lisa_sel_connection_rindex = [];
+}
+
+function _lisa_clear_existing_region_sel() {
+  if(_lisa_sel_item !== null) {
+    _lisa_sel_item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children[_lisa_sel_rindex].classList.remove('sel');
+    _lisa_sel_item = null;
+    _lisa_sel_rindex = -1;
+    _lisa_hide_region_attributes();
+  }
+}
+
+function _lisa_del_region() {
+  if(_lisa_sel_item !== null) {
+    var indices_to_delete = [_lisa_sel_rindex];
+    for (var i = 0; i < _lisa_store['files'][_lisa_sel_item.id]['regions'].length; i++) {
+      if (_lisa_store['files'][_lisa_sel_item.id]['regions'][i].length == 6) {
+        if (_lisa_store['files'][_lisa_sel_item.id]['regions'][i][0] == _lisa_sel_rindex || 
+            _lisa_store['files'][_lisa_sel_item.id]['regions'][i][1] == _lisa_sel_rindex) {
+          indices_to_delete.push(i);
+        }
+      }
+    }
+    _lisa_del_indices(indices_to_delete);
+    _lisa_sel_item.style.cursor = 'default';
+    _lisa_sel_item = null;
+    _lisa_sel_rindex = -1;
+    _lisa_log('Deleted selected region.');
+  }
+}
+
+function _lisa_del_indices(list_of_indices) {
+  // sort in descending order
+  list_of_indices.sort(function(a, b){return b-a});
+  for (var i = 0; i < list_of_indices.length; i++) {
+    // remove region at index from stores
+    _lisa_store['files'][_lisa_sel_item.id]['regions'].splice(list_of_indices[i], 1);
+    _lisa_store['files'][_lisa_sel_item.id]['rdata'].splice(list_of_indices[i], 1);
+    _lisa_svg_store[_lisa_sel_item.id].splice(list_of_indices[i], 1);
+    // update the ids of regions that are after the deleted region
+    var update_edge_indices = {};
+    for (var j = _lisa_sel_item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children.length - 1; j >= 0; j--) {
+      let child = _lisa_sel_item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children[j];
+      if(j > list_of_indices[i]) {
+        let previous_child = _lisa_sel_item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children[j - 1];
+        update_edge_indices[j] = j-1;
+        child.id = previous_child.id;
+      }
+    }
+    // remove the svg element
+    var element = _lisa_sel_item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children[list_of_indices[i]];
+    element.parentNode.removeChild(element);
+
+    // go through all "edge" regions and update the indices due to shifting
+    for (var j = 0; j < _lisa_store['files'][_lisa_sel_item.id]['regions'].length; j++) {
+      var region = _lisa_store['files'][_lisa_sel_item.id]['regions'][j];
+      if (region.length == 6) {
+        let A = region[0];
+        let B = region[1];
+        if (A in update_edge_indices) {
+          _lisa_store['files'][_lisa_sel_item.id]['regions'][j][0] = update_edge_indices[A];
+          _lisa_svg_store[_lisa_sel_item.id][j][0] = update_edge_indices[A];
+        }
+        if (B in update_edge_indices) {
+          _lisa_store['files'][_lisa_sel_item.id]['regions'][j][1] = update_edge_indices[B];
+          _lisa_svg_store[_lisa_sel_item.id][j][1] = update_edge_indices[B];
+        }
+      }
+    }
+  }
+}
+
+function _lisa_del_all_regions() {
+  if(_lisa_sel_item !== null) {
+    _lisa_hide_region_attributes();
+    let n_regions = _lisa_store['files'][_lisa_sel_item.id]['regions'].length;
+    _lisa_store['files'][_lisa_sel_item.id]['regions'].splice(0, n_regions);
+    _lisa_store['files'][_lisa_sel_item.id]['rdata'].splice(0, n_regions);
+    _lisa_svg_store[_lisa_sel_item.id].splice(0, n_regions);
+    for (let i = n_regions -1; i >= 0; i--) {
+      var rect = _lisa_sel_item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children[i];
+      rect.parentNode.removeChild(rect);
+    }
+    _lisa_sel_item.style.cursor = 'default';
+    _lisa_sel_item = null;
+    _lisa_sel_rindex = -1;
+    _lisa_log('Deleted all regions.');
+  }
+}
+
+function _lisa_set_state(new_state) {
+  //console.log(_lisa_state_id_to_name(_lisa_state_id) + ' -> ' + _lisa_state_id_to_name(new_state));
+  _lisa_state_id = new_state;
+}
+
+function _lisa_state_id_to_name(state_id) {
+  switch(state_id) {
+  case _LISA_RINPUT_STATE.UNKNOWN:
+    return 'UNKNOWN';
+    break;
+  case _LISA_RINPUT_STATE.IDLE:
+    return 'IDLE';
+    break;
+  case _LISA_RINPUT_STATE.REGION_SELECTED:
+    return 'REGION_SELECTED';
+    break;
+  case _LISA_RINPUT_STATE.REGION_SELECT_OR_DRAW_POSSIBLE:
+    return 'REGION_SELECT_OR_DRAW_POSSIBLE';
+    break;
+  case _LISA_RINPUT_STATE.REGION_UNSELECT_ONGOING:
+    return 'REGION_UNSELECT_ONGOING';
+    break;
+  case _LISA_RINPUT_STATE.REGION_MOVE_ONGOING:
+    return 'REGION_MOVE_ONGOING';
+    break;
+  case _LISA_RINPUT_STATE.REGION_RESIZE_ONGOING:
+    return 'REGION_RESIZE_ONGOING';
+    break;
+  case _LISA_RINPUT_STATE.REGION_DRAW_ONGOING:
+    return 'REGION_DRAW_ONGOING';
+    break;
+  default:
+    return 'INVALID STATE_ID=' + state_id;
+  }
+}
+
+//
+// load existing project or initialize a new project
+//
+function _lisa_load_or_init_project_panel() {
+  var start_info = document.createElement('div');
+  start_info.innerHTML = `<div>
+<h1>LISA Manga</h1>
+<p>LISA Manga is an adaptation of the standalone and light-weight HTML/CSS/JavaScript based application to efficiently annotate a large list of images. LISA is an <a href="https://gitlab.com/vgg/lisa">open source project</a> developed and maintained by the Visual Geometry Group (<a href="https://www.robots.ox.ac.uk/~vgg/">VGG</a>) and released under a license that grants its users the freedom to use it for any purpose.</p>
+
+<h3>Load Shared Project</h3>
+<input id="shared_project_id" type="text" value="" placeholder="e.g. d58d4dde-83b8-4fde-9728-506cf3922509">
+<button onclick="_lisa_load_shared_project()">Load</button>
+
+<h3>Annotation Guide</h3>
+<p>For a detailed annotation guide, please refer to the <a href="https://ragavsachdeva.notion.site/Manga-Diarisation-Annotation-Instructions-a37e7c1e148241cca8e9e37bd6d84fbd?pvs=4">this document</a>.</p>
+
+
+`;
+  start_info.innerHTML += _lisa_keyboard_shortcut_html_str;
+  start_info.innerHTML += '</div>';
+  _lisa_container.innerHTML = '';
+  _lisa_container.appendChild(start_info);
+}
+
+function _lisa_load_demo_project() {
+  document.getElementById('_lisa_input_filelist').value = _LISA_DEMO_FILELIST.join('\n');
+  _lisa_init_new_project();
+  _lisa_store['attributes']['file']['caption'] = {'aname':'Caption', 'atype':'text'};
+  _lisa_store['attributes']['region'] = {
+    'type': {
+      'aname': 'Type',
+      'atype': 'radio',
+      'options': {'bird': 'Bird', 'other': 'other'}
+    },
+    'note': {
+      'aname' : 'Note',
+      'atype' : 'text'
+    }
+  };
+  _lisa_store['config']['show_attributes'] = {
+    'file': ['caption'],
+    'region': ['type', 'note']
+  };
+}
+
+function _lisa_init_new_project() {
+  var textarea = document.getElementById('_lisa_input_filelist');
+  if( textarea.value !== '' ) {
+    var flist = _lisa_split_file_in_lines(textarea.value);
+    if(flist.length) {
+      _lisa_init_new_project_from_filename_list(flist);
+    } else {
+      _lisa_log('Invalid entry in text box. Enter one filename per line.');
+      return;
+    }
+  } else {
+    var selected_files = document.getElementById('_lisa_input_filelist_file').files;
+    if( selected_files.length ) {
+      _lisa_load_text_file(selected_files[0], _lisa_load_filename_list);
+    } else {
+      _lisa_log('To initialize a project, you must either select a local file containing filenames or enter filename list in the text box.');
+      return;
+    }
+  }
+  let welcome_msg = "Click and drag to draw a rectangular region.";
+  if (_LISA_FEATURE_FEATURE_POINTS)
+    welcome_msg += " Single click to define feature points.";
+  if (_LISA_FEATURE_DBLCLICK_DELETE_ALL)
+    welcome_msg += " Double click to delete all regions.";
+
+  _lisa_log(welcome_msg);
+}
+
+function _lisa_load_filename_list(filename_list_str) {
+  var flist = _lisa_split_file_in_lines(filename_list_str);
+  _lisa_init_new_project_from_filename_list(flist);
+}
+
+function _lisa_init_new_project_from_filename_list(flist) {
+  for(var findex in flist) {
+    _lisa_store['files'].push({
+      'fid':findex,
+      'src':flist[findex],
+      'regions':[],
+      'rdata':[],
+      'fdata':{}
+    });
+  }
+  _lisa_show_file_list();
+}
+
+function _lisa_project_save() {
+  var filename = 'lisa_project_' + _lisa_store['project']['project_id'].substr(0,4) + '_' + _lisa_current_timestamp() + '.json';
+  var _lisa_store_blob = new Blob( [JSON.stringify(_lisa_store, _lisa_project_fixfloat_precision)],
+                                   {type: 'text/json;charset=utf-8'});
+  _lisa_save_data_to_local_file(_lisa_store_blob, filename);
+}
+
+function _lisa_project_on_project_file_select() {
+  var project_file_selector = document.getElementById('_lisa_input_project_file_selector');
+  if(project_file_selector && project_file_selector.files.length) {
+    _lisa_load_text_file(project_file_selector.files[0], _lisa_project_load);
+  }
+}
+
+function _lisa_project_load(_lisa_store_str) {
+  try {
+    _lisa_store = JSON.parse(_lisa_store_str);
+    _lisa_update_toolbar();
+    if(_lisa_store['files'].length) {
+      _lisa_show_file_list();
+    }
+    _lisa_log('Loaded LISA project ' + _lisa_store['project']['project_id']);
+  } catch(ex) {
+    _lisa_log('Malformed JSON file: ' + ex.toString());
+  }
+}
+
+function _lisa_project_on_coco_file_select() {
+  var coco_file_selector = document.getElementById('_lisa_input_coco_file_selector');
+  if(coco_file_selector && coco_file_selector.files.length) {
+    _lisa_load_text_file(coco_file_selector.files[0], _lisa_coco_load);
+  }
+}
+
+function _lisa_coco_load(coco_project_str) {
+  try {
+    _lisa_coco_copy = JSON.parse(coco_project_str);
+    for (let prop_key of ['info', 'images', 'annotations', 'categories']) {
+      if (! _lisa_coco_copy.hasOwnProperty(prop_key)) {
+        _lisa_log('Malformed COCO annotations: missing "' + prop_key + '" key.');
+        return;
+      }
+    }
+    var import_stat = _lisa_import_coco(_lisa_coco_copy);
+    _lisa_update_toolbar();
+    if(_lisa_store['files'].length) {
+      _lisa_show_file_list();
+    }
+    _lisa_log('Imported ' + import_stat['file'] + ' files and ' +
+              import_stat['region'] + ' regions from COCO annotations');
+  } catch(ex) {
+    _lisa_log('Malformed JSON file: ' + ex.toString());
+    console.log(ex)
+  }
+}
+
+function _lisa_project_show_next() {
+  if(_lisa_store['config']['navigation_to'] === _lisa_store['files'].length) {
+    _lisa_log('You are at the end of file list');
+  } else {
+    _lisa_show_file_list(_lisa_store['config']['navigation_to']);
+  }
+}
+
+function _lisa_project_show_prev() {
+  if(_lisa_store['config']['navigation_from'] === 0) {
+    _lisa_log('You are at the beginning of file list.');
+  } else {
+    var page_size = _lisa_store['config']['navigation_to'] - _lisa_store['config']['navigation_from'];
+    var from_findex = _lisa_store['config']['navigation_from'] - page_size;
+    _lisa_show_file_list(from_findex);
+  }
+}
+
+function _lisa_project_fixfloat_precision(key, value) {
+  if(value.toFixed) {
+    return Number(value.toFixed(_lisa_store['config']['float_precision']));
+  } else {
+    return value;
+  }
+}
+
+function _lisa_toggle_demo_filelist(e) {
+  var textarea = document.getElementById('_lisa_input_filelist');
+  if(e.checked) {
+    textarea.value = _LISA_DEMO_FILELIST.join('\n');
+  } else {
+    textarea.value = '';
+  }
+}
+
+//
+// misc
+//
+function _lisa_log(msg, t) {
+  if( _lisa_message_clear_timer ) {
+    clearTimeout(_lisa_message_clear_timer); // stop any previous timeouts
+  }
+  var timeout = t;
+  if ( typeof t === 'undefined' ) {
+    timeout = _LISA_MESSAGE_TIMEOUT_MS;
+  }
+  _lisa_log_container.innerHTML = msg;
+  _lisa_message_container.classList.remove('_lisa_hide');
+
+  _lisa_message_clear_timer = setTimeout( function() {
+    _lisa_log_container.innerHTML = '';
+    _lisa_message_container.classList.add('_lisa_hide');
+  }, timeout);
+}
+
+function _lisa_save_data_to_local_file(data, filename) {
+  var a      = document.createElement('a');
+  a.href     = URL.createObjectURL(data);
+  a.download = filename;
+
+  // simulate a mouse click event
+  var event = new MouseEvent('click', {
+    view: window,
+    bubbles: true,
+    cancelable: true
+  });
+  a.dispatchEvent(event);
+
+  // @todo: replace a.dispatchEvent() with a.click()
+  // a.click() based trigger is supported in Chrome 70 and Safari 11/12 but **not** in Firefox 63
+  //a.click();
+}
+
+function _lisa_uuid() {
+  var temp_url = URL.createObjectURL(new Blob());
+  var uuid = temp_url.toString();
+  URL.revokeObjectURL(temp_url);
+  return uuid.substr(uuid.lastIndexOf('/') + 1); // remove prefix (e.g. blob:null/, blob:www.test.com/, ...)
+}
+
+function _lisa_load_text_file(text_file, callback_function) {
+  if (text_file) {
+    var text_reader = new FileReader();
+    text_reader.addEventListener( 'error', function() {
+      _lisa_log('Error loading data text file :  ' + text_file.name + ' !');
+      callback_function('');
+    }, false);
+
+    text_reader.addEventListener( 'load', function() {
+      callback_function(text_reader.result);
+    }, false);
+    text_reader.readAsText(text_file, 'utf-8');
+  }
+}
+
+function _lisa_current_timestamp() {
+  var d = new Date();
+  var ts = d.getFullYear().toString() + (d.getMonth()+1).toString().padStart(2,'0') + d.getDate().toString().padStart(2,'0') + '_' + d.getHours().toString().padStart(2,'0') + 'h' + d.getMinutes().toString().padStart(2,'0') + 'm';
+  return ts;
+}
+
+function _lisa_bbox_to_polygon(bbox) {
+  var x1 = bbox[0] + bbox[2];
+  var y1 = bbox[1] + bbox[3];
+  return [bbox[0], bbox[1], x1, bbox[1], x1, y1, bbox[0], y1 ];
+}
+
+function _lisa_bbox_to_area(bbox) {
+  return bbox[2] * bbox[3];
+}
+
+//
+// import
+//
+function _lisa_import_coco(coco) {
+  // create _via_attributes from coco['categories']
+  _lisa_store['attributes']['region'] = { 'name': {'aname':'name',
+                                                   'atype':'select',
+                                                   'options':{} }
+                                        };
+  var category_id_to_name_map = {};
+  var category_id_to_supercategory_map = {};
+  for( var i in coco['categories'] ) {
+    var sc    = coco['categories'][i]['supercategory'];
+    var cid   = coco['categories'][i]['id'];
+    var cname = coco['categories'][i]['name'];
+    category_id_to_name_map[cid] = cname;
+    category_id_to_supercategory_map[cid] = sc;
+    if( !_lisa_store['attributes']['region']['name']['options'].hasOwnProperty(cid) ) {
+      _lisa_store['attributes']['region']['name']['options'][cid] = cname;
+    }
+  }
+
+  // create an map of image_id and their annotations
+  var image_id_to_annotation_index = {};
+  for ( var annotation_index in coco['annotations'] ) {
+    var coco_image_id = coco.annotations[annotation_index]['image_id'];
+    if ( !image_id_to_annotation_index.hasOwnProperty(coco_image_id) ) {
+      image_id_to_annotation_index[coco_image_id] = [];
+    }
+    image_id_to_annotation_index[coco_image_id].push( annotation_index );
+  }
+
+  // add all files and annotations
+  var imported_file_count = 0;
+  var imported_region_count = 0;
+  for ( var coco_img_index in coco['images'] ) {
+    var coco_img_id = coco['images'][coco_img_index]['id'];
+    var filename;
+    if ( coco.images[coco_img_index].hasOwnProperty('coco_url') &&
+         coco.images[coco_img_index]['coco_url'] !== "") {
+      filename = coco.images[coco_img_index]['coco_url'];
+    } else {
+      filename = coco.images[coco_img_index]['file_name'];
+    }
+
+    // collect all annotations associated with this file
+    var regions = [];
+    var rdata = [];
+    if ( image_id_to_annotation_index.hasOwnProperty(coco_img_id) ) {
+      for ( var i in image_id_to_annotation_index[coco_img_id] ) {
+        var annotation_i = coco['annotations'][ image_id_to_annotation_index[coco_img_id][i] ];
+        var bbox = annotation_i['bbox'];
+        regions.push(bbox);
+        //var name = category_id_to_name_map[ annotation_i['category_id'] ];
+        rdata.push( { 'name':annotation_i['category_id']  } );
+        imported_region_count = imported_region_count + 1;
+      }
+    }
+    _lisa_store['files'].push({ 'fid':coco_img_id,
+                                'src':filename,
+                                'regions':regions,
+                                'rdata':rdata,
+                                'fdata': {
+                                  'width' : coco['images'][coco_img_index]['width'],
+                                  'height': coco['images'][coco_img_index]['height']
+                                }
+                              });
+    imported_file_count = imported_file_count + 1;
+  }
+  _lisa_store['config']['file_src_prefix'] = 'images/';
+  _lisa_store['config']['show_attributes']['region'].push('name');
+  _lisa_store['config']['item_per_page'] = 200;
+  return { 'file':imported_file_count, 'region':imported_region_count };
+}
+
+//
+// export
+//
+
+function _lisa_export_coco() {
+  var rattr_list = Object.keys(_lisa_store['attributes']['region']);
+  if(rattr_list.length !== 1) {
+    _lisa_log('For COCO export, there must be only 1 region attribute. Currently, there are ' + rattr_list.length + ' region attributes');
+    return;
+  }
+  var coco_category_rattr = rattr_list[0];
+  if(_lisa_store['attributes']['region'][coco_category_rattr]['atype'] !== 'select') {
+    _lisa_log('For COCO export, the attribute type for ' + coco_category_rattr + ' must be "select"');
+    return;
+  }
+
+  var coco = { 'info':{}, 'images':[], 'annotations':[], 'licenses':[], 'categories':[] };
+  coco['info'] = { 'year': new Date().getFullYear(),
+                   'version': '1.0',
+                   'description': 'LISA project exported to COCO format using List Annotator (LISA) (http://www.robots.ox.ac.uk/~vgg/software/lisa/)',
+                   'contributor': '',
+                   'url': 'http://www.robots.ox.ac.uk/~vgg/software/lisa/',
+                   'date_created': new Date().toString(),
+                 };
+  coco['licenses'] = [ {'id':0, 'name':'Unknown License', 'url':''} ]; // indicates that license is unknown
+  var unique_annotation_id = 1;
+  for(var findex in _lisa_store['files']) {
+    coco['images'].push({
+      'id':parseInt(findex),
+      'width':_lisa_store['files'][findex]['fdata']['width'],
+      'height':_lisa_store['files'][findex]['fdata']['height'],
+      'file_name':_lisa_store['files'][findex]['src'],
+      'license':'',
+      'flickr_url':'',
+      'coco_url':'',
+      'date_captured':''
+    });
+    for(var rindex in _lisa_store['files'][findex]['regions']) {
+      var rdata = _lisa_store['files'][findex]['rdata'][rindex];
+      if( coco_category_rattr in rdata ) {
+        var category_id = rdata[coco_category_rattr];
+        var category_name = _lisa_store['attributes']['region'][coco_category_rattr]['options'][category_id];
+        var pts = _lisa_store['files'][findex]['regions'][rindex];
+        coco['annotations'].push({
+          'id':unique_annotation_id,
+          'image_id':parseInt(findex),
+          'category_id':category_id,
+          'segmentation': [ _lisa_bbox_to_polygon(pts) ],
+          'area':_lisa_bbox_to_area(pts),
+          'bbox':pts,
+          'iscrowd':0
+        });
+      }
+      unique_annotation_id = unique_annotation_id + 1;
+    }
+  }
+
+  // add categories
+  for(var category_id in _lisa_store['attributes']['region'][coco_category_rattr]['options']) {
+    var category_name = _lisa_store['attributes']['region'][coco_category_rattr]['options'][category_id];
+    coco['categories'].push({
+      'id':parseInt(category_id),
+      'name':category_name,
+      'supercategory':coco_category_rattr,
+    });
+
+  }
+
+  return new Blob( [JSON.stringify(coco, _lisa_project_fixfloat_precision)],
+                   {type: 'text/json;charset=utf-8'});
+}
+
+function _lisa_export_csv() {
+  var csv = [];
+  csv.push('file_id,file_name,x,y,width,height');
+  for(var findex in _lisa_store['files']) {
+    var file_src = _lisa_store['config']['file_src_prefix'] + _lisa_store['files'][findex]['src'];
+    for(var rindex in _lisa_store['files'][findex]['regions']) {
+      var line = [findex, file_src];
+      var pts = _lisa_store['files'][findex]['regions'][rindex];
+      line.push( Number(pts[0].toFixed(_lisa_store['config']['float_precision'])) );
+      line.push( Number(pts[1].toFixed(_lisa_store['config']['float_precision'])) );
+      line.push( Number(pts[2].toFixed(_lisa_store['config']['float_precision'])) );
+      line.push( Number(pts[3].toFixed(_lisa_store['config']['float_precision'])) );
+      csv.push(line.join(','));
+    }
+  }
+  return new Blob( [ csv.join('\n') ],
+                   {type: 'text/plain;charset=utf-8'});
+}
+
+//
+// attribute editor
+//
+function _lisa_show_region_attributes() {
+  _lisa_attribute_container.classList.remove('_lisa_hide');
+  _lisa_attribute_container.innerHTML = '';
+
+  // position the attribute container
+  var px = _lisa_sel_item.parentNode.offsetLeft;
+  var py = _lisa_sel_item.parentNode.offsetTop;
+
+  var sel_region = _lisa_sel_item.parentNode.children[_LISA_ITEM_SVG_OFFSET].children[_lisa_sel_rindex];
+  var rx, ry, rh;
+  if(sel_region.nodeName === 'circle') {
+    rx = parseInt(sel_region.getAttribute('cx'));
+    ry = parseInt(sel_region.getAttribute('cy'));
+    rh = parseInt(sel_region.getAttribute('r'));
+  } else {
+    rx = parseInt(sel_region.getAttribute('x'));
+    ry = parseInt(sel_region.getAttribute('y'));
+    rh = parseInt(sel_region.getAttribute('height'));
+  }
+  var left = px + rx + _lisa_container.offsetLeft;
+  var top = py + ry + rh + _lisa_container.offsetTop + _LISA_REGION_ATTRIBUTE_OFFSET;
+  _lisa_attribute_container.setAttribute('style', 'top:' + top + 'px; left:' + left + 'px;');
+
+  // populate the container with region attributes
+  var table = document.createElement('table');
+  var header_row = document.createElement('tr');
+  var input_row = document.createElement('tr');
+  for(var aindex in _lisa_store['config']['show_attributes']['region']) {
+    var aid = _lisa_store['config']['show_attributes']['region'][aindex];
+    var header = document.createElement('th');
+    header.innerHTML = _lisa_store['attributes']['region'][aid]['aname'];
+    header_row.appendChild(header);
+
+    var input = document.createElement('td');
+    var ainput = _lisa_region_attribute_input_html(aid);
+    input.appendChild(ainput);
+    input_row.appendChild(input);
+  }
+  table.appendChild(header_row);
+  table.appendChild(input_row);
+  _lisa_attribute_container.appendChild(table);
+
+}
+
+
+function _lisa_region_attribute_get_value(item_id, region_id, attr_id) {
+  if (_lisa_store['files'][item_id]['rdata'][region_id].hasOwnProperty(attr_id))
+    return _lisa_store['files'][item_id]['rdata'][region_id][attr_id];
+  else if (_lisa_store['attributes']['region'][attr_id].hasOwnProperty('default_option_id'))
+    return _lisa_store['attributes']['region'][attr_id]['default_option_id']
+  // else: return undef
+}
+
+
+function _lisa_region_attribute_select(aid) {
+  let aval = _lisa_region_attribute_get_value(_lisa_sel_item.id, _lisa_sel_rindex, aid);
+  if (aval === undefined)
+    aval = null;
+  if (typeof(aval) === 'number')
+    aval = aval.toString();
+
+  const el = document.createElement('select');
+  el.setAttribute('data-fid', _lisa_sel_item.id);
+  el.setAttribute('data-aid', aid);
+  el.addEventListener('change', _lisa_region_attribute_onchange);
+
+  let is_option_selected = false;
+  for (const oid in _lisa_store['attributes']['region'][aid]['options']) {
+    const oval = _lisa_store['attributes']['region'][aid]['options'][oid];
+    const option = document.createElement('option');
+    option.setAttribute('value', oid);
+    option.innerHTML = oval;
+    el.appendChild(option);
+    if (aval !== null && aval === oid) {
+      option.setAttribute('selected', 'selected');
+      is_option_selected = true;
+    }
+  }
+  if (! is_option_selected)
+    el.selectedIndex = -1;
+  return el;
+}
+
+
+function _lisa_region_attribute_radio(aid) {
+  let aval = _lisa_region_attribute_get_value(_lisa_sel_item.id, _lisa_sel_rindex, aid);
+  if (aval === undefined)
+    aval = null;
+  if (typeof(aval) === 'number')
+    aval = aval.toString();
+
+  const el = document.createElement('div');
+  let is_option_selected = false;
+  for(const oid in _lisa_store['attributes']['region'][aid]['options']) {
+    const oval = _lisa_store['attributes']['region'][aid]['options'][oid];
+
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.id = aid + "-" + oid;
+    radio.name = aid;
+    radio.value = oid;
+    radio.addEventListener("change", _lisa_region_attribute_onchange);
+
+    const label = document.createElement('label');
+    label.htmlFor = radio.id;
+    label.innerHTML = oval;
+
+    if (aval !== null && aval === oid) {
+      radio.checked = true;
+      is_option_selected = true;
+    }
+    el.appendChild(radio);
+    el.appendChild(label);
+    el.appendChild(document.createElement('br'));
+  }
+
+  if (! is_option_selected)
+    el.selectedIndex = -1;
+
+  return el;
+}
+
+
+function _lisa_region_attribute_checkbox(aid) {
+  let aval = _lisa_region_attribute_get_value(_lisa_sel_item.id, _lisa_sel_rindex, aid);
+  if (aval === undefined)
+    aval = [];
+  const selected_options = aval.split(',');
+
+  // TODO: use fieldset instead of table and column headers
+  let el = document.createElement('div');
+  for (const oid in _lisa_store['attributes']['region'][aid]['options']) {
+    const checkbox = document.createElement('input');
+    checkbox.setAttribute('type', 'checkbox');
+    checkbox.setAttribute('value', oid);
+    checkbox.setAttribute('data-fid', _lisa_sel_item.id);
+    checkbox.setAttribute('data-aid', aid);
+    checkbox.setAttribute('name', _lisa_sel_item.id + '_' + aid);
+    if (selected_options.includes(oid))
+      checkbox.checked = true;
+    checkbox.addEventListener('change', _lisa_region_attribute_onchange);
+
+    const label = document.createElement('label');
+    label.appendChild(checkbox);
+    label.insertAdjacentHTML(
+      'beforeend',
+      _lisa_store['attributes']['region'][aid]['options'][oid]
+    );
+    el.appendChild(label);
+    el.appendChild(document.createElement('br'));
+  }
+  return el;
+}
+
+
+function _lisa_region_attribute_label(aid) {
+  let aval = _lisa_region_attribute_get_value(_lisa_sel_item.id, _lisa_sel_rindex, aid);
+  if (aval === undefined)
+    aval = "";
+
+  let el = document.createElement('div');
+  el.innerHTML = aval;
+  return el;
+}
+
+
+function _lisa_region_attribute_text(aid) {
+  let aval = _lisa_region_attribute_get_value(_lisa_sel_item.id, _lisa_sel_rindex, aid);
+  if (aval === undefined)
+    aval = "";
+
+  const text = document.createElement('input');
+  text.setAttribute('type', 'text');
+  text.setAttribute('value', aval);
+
+  text.setAttribute('data-item_id', _lisa_sel_item.id);
+  text.setAttribute('data-rindex', _lisa_sel_rindex);
+  text.setAttribute('data-aid', aid);
+  text.addEventListener('change', _lisa_region_attribute_onchange);
+
+  return text;
+}
+
+
+function _lisa_region_attribute_input_html(aid) {
+  const atype = _lisa_store['attributes']['region'][aid]['atype'];
+  if (atype === 'select')
+    return _lisa_region_attribute_select(aid);
+  else if (atype === 'radio')
+    return _lisa_region_attribute_radio(aid);
+  else if (atype === 'checkbox')
+    return _lisa_region_attribute_checkbox(aid);
+  else if (atype === 'label')
+    return _lisa_region_attribute_label(aid);
+  else if (atype === 'text')
+    return _lisa_region_attribute_text(aid);
+  else
+    console.log('unknown attribute type ' + atype);
+}
+
+
+function _lisa_region_attribute_onchange(e) {
+  const input = e.target;
+  var aid = input.dataset.aid;
+  switch(input.type) {
+  case 'select-one':
+    var new_aval = input.options[input.selectedIndex].value;
+    _lisa_update_img_region_attribute(_lisa_sel_item.id,
+                                      _lisa_sel_rindex,
+                                      aid,
+                                      new_aval);
+    break;
+  case 'radio':
+    _lisa_update_img_region_attribute(_lisa_sel_item.id,
+                                      _lisa_sel_rindex,
+                                      e.target.name,
+                                      e.target.value);
+    break;
+  case 'checkbox':
+    var update_required = false;
+    var aval_tok = [];
+    if(aid in _lisa_store['files'][_lisa_sel_item.id]['rdata'][_lisa_sel_rindex]) {
+      const aval0_str = _lisa_store['files'][_lisa_sel_item.id]['rdata'][_lisa_sel_rindex][aid];
+      if(aval0_str.length !== 0) {
+        aval_tok = aval0_str.split(',');
+      }
+
+      if(input.checked) {
+        // add this new value (if missing)
+        if( !aval_tok.includes(input.value) ) {
+          aval_tok.push(input.value);
+          update_required = true;
+        }
+      } else {
+        // remove this value (if present)
+        const value_index = aval_tok.indexOf(input.value);
+        if( value_index !== -1 ) {
+          aval_tok.splice(value_index, 1);
+          update_required = true;
+        }
+      }
+    } else {
+      aval_tok.push(input.value);
+      update_required = true;
+    }
+    if(update_required) {
+      _lisa_update_img_region_attribute(_lisa_sel_item.id,
+                                        _lisa_sel_rindex,
+                                        aid,
+                                        aval_tok.join(','));
+    }
+    break;
+
+  case 'text':
+    _lisa_update_img_region_attribute(input.dataset.item_id,
+                                      input.dataset.rindex,
+                                      input.dataset.aid,
+                                      input.value);
+    break
+  default:
+    console.error('unhandled region attribute input type');
+  }
+}
+
+function _lisa_hide_region_attributes() {
+  _lisa_attribute_container.classList.add("_lisa_hide");
+
+  // We are about to destroy the region attribute editor.  However, if
+  // the user dismisses the editor after changing a text input, we
+  // destroy the editor before the input blur triggers and never never
+  // get the change event.  So we manually trigger the blur.  See
+  // discussion on issue #31.
+  for (const input of _lisa_attribute_container.querySelectorAll('input[type=text]'))
+    if (document.activeElement === input)
+      input.blur();
+
+  _lisa_attribute_container.innerHTML = "";
+}
+
+
+function _lisa_shuffle_array_inplace(options) {
+  // Knuth-Fisher-Yates shuffle algorithm, adapted to Javascript from
+  // https://blog.codinghorror.com/the-danger-of-naivete/
+  for (let i = options.length - 1; i > 0; i--) {
+      let n = Math.floor(Math.random() * (i + 1));
+      let tmp = options[i];
+      options[i] = options[n];
+      options[n] = tmp;
+  }
+}
+
+
+//
+// file attributes
+//
+function _lisa_file_attribute_input_html(fid, aid) {
+  var atype = _lisa_store['attributes']['file'][aid]['atype'];
+  var el;
+  switch(atype) {
+  case 'label':
+    el = document.createElement('div');
+    el.setAttribute('class', 'attribute');
+    var alabel = document.createElement('div');
+    alabel.setAttribute('class', 'aname');
+    alabel.innerHTML = _lisa_store['attributes']['file'][aid]['aname'] + ': ';
+    var aval = document.createElement('div');
+    aval.innerHTML = _lisa_store['files'][fid]['fdata'][aid];
+    el.appendChild(alabel);
+    el.appendChild(aval);
+    break;
+  case 'text':
+    el = document.createElement('div');
+    el.setAttribute('class', 'attribute');
+    var input = document.createElement('input');
+    input.setAttribute('type', 'text');
+    input.setAttribute('title', _lisa_store['attributes']['file'][aid]['aname']);
+    input.setAttribute('placeholder', _lisa_store['attributes']['file'][aid]['aname']);
+    input.setAttribute('data-fid', fid);
+    input.setAttribute('data-aid', aid);
+    if(_lisa_store['files'][fid]['fdata'].hasOwnProperty(aid)) {
+      input.setAttribute('value', _lisa_store['files'][fid]['fdata'][aid]);
+    }
+    input.addEventListener('change', _lisa_file_attribute_onchange.bind(input));
+    el.appendChild(input);
+    break;
+  case 'checkbox':
+    el = document.createElement('fieldset');
+    el.setAttribute('class', 'attribute');
+    var alabel = document.createElement('legend');
+    alabel.setAttribute('class', 'aname');
+    alabel.innerHTML = _lisa_store['attributes']['file'][aid]['aname'];
+    el.appendChild(alabel);
+
+    var aval = "";
+    if(_lisa_store['attributes']['file'][aid].hasOwnProperty('default_option_id')) {
+      aval = _lisa_store['attributes']['file'][aid]['default_option_id'];
+    }
+    if(_lisa_store['files'][fid]['fdata'].hasOwnProperty(aid)) {
+      aval = _lisa_store['files'][fid]['fdata'][aid];
+    }
+    var options = Object.keys(_lisa_store['attributes']['file'][aid]['options']);
+    let checked_options = new Map(options.map(x => [x, false]));
+    for (let oid of aval.split(','))
+      checked_options[oid] = true;
+
+    if (_lisa_store['attributes']['file'][aid]["shuffle"])
+      _lisa_shuffle_array_inplace(options);
+
+    for (let oid of options) {
+      var checkbox = document.createElement('input');
+      checkbox.setAttribute('type', 'checkbox');
+      checkbox.setAttribute('value', oid);
+      checkbox.setAttribute('data-fid', fid);
+      checkbox.setAttribute('data-aid', aid);
+      checkbox.setAttribute('name', fid + '_' + aid);
+      if (checked_options[oid])
+        checkbox.setAttribute('checked', '');
+      checkbox.addEventListener('change', _lisa_file_attribute_onchange.bind(checkbox));
+      var label = document.createElement('label');
+      label.appendChild(checkbox);
+      label.insertAdjacentHTML("beforeend",
+                               _lisa_store['attributes']['file'][aid]['options'][oid]);
+      el.appendChild(label);
+      el.appendChild(document.createElement('br'));
+    }
+    break;
+  case 'radio':
+    el = document.createElement('fieldset');
+    el.setAttribute('class', 'attribute');
+    var alabel = document.createElement('legend');
+    alabel.setAttribute('class', 'aname');
+    alabel.innerHTML = _lisa_store['attributes']['file'][aid]['aname'];
+    el.appendChild(alabel);
+    var aval;
+    if(_lisa_store['attributes']['file'][aid].hasOwnProperty('default_option_id')) {
+      aval = _lisa_store['attributes']['file'][aid]['default_option_id'];
+    }
+    if(_lisa_store['files'][fid]['fdata'].hasOwnProperty(aid)) {
+      aval = _lisa_store['files'][fid]['fdata'][aid];
+    }
+
+    var options = Object.keys(_lisa_store['attributes']['file'][aid]['options']);
+    if (_lisa_store['attributes']['file'][aid]["shuffle"])
+      _lisa_shuffle_array_inplace(options);
+
+    for (let oid of options) {
+      var radio = document.createElement('input');
+      radio.setAttribute('type', 'radio');
+      radio.setAttribute('value', oid);
+      radio.setAttribute('data-fid', fid);
+      radio.setAttribute('data-aid', aid);
+      radio.setAttribute('name', fid + '_' + aid);
+      if ( oid === aval ) {
+        radio.setAttribute('checked', '');
+      }
+      radio.addEventListener('change', _lisa_file_attribute_onchange.bind(radio));
+      var label = document.createElement('label');
+      label.appendChild(radio);
+      label.insertAdjacentHTML("beforeend",
+                               _lisa_store['attributes']['file'][aid]['options'][oid]);
+      el.appendChild(label);
+      el.appendChild(document.createElement('br'));
+    }
+    break;
+
+  default:
+    console.log('unknown attribute type ' + atype);
+  }
+  return el;
+}
+
+function _lisa_file_attribute_onchange() {
+  var aid = this.dataset.aid;
+  var fid = this.dataset.fid;
+  var new_aval = this.value;
+  if(_lisa_store['attributes']['file'][aid]['atype'] === 'checkbox' &&
+    aid in _lisa_store['files'][fid]['fdata']) {
+    console.log(_lisa_store['files'][fid]['fdata'])
+    var aval_list = _lisa_store['files'][fid]['fdata'][aid].split(',');
+    if(this.checked) {
+      aval_list.push(new_aval);
+    } else {
+      var new_aval_index = aval_list.indexOf(new_aval);
+      if(new_aval_index !== -1) {
+        aval_list.splice(new_aval_index, 1);
+      }
+    }
+    _lisa_update_img_file_attribute(fid,
+                                    aid,
+                                    aval_list.join(','));
+  } else {
+    // @todo: checkboxes should read/write csv values
+    _lisa_update_img_file_attribute(fid,
+                                    aid,
+                                    new_aval);
+  }
+}
+
+//
+// Shared project
+//
+function _lisa_load_shared_project(shared_pid) {
+  if(typeof(shared_pid) === 'undefined') {
+    shared_pid = document.getElementById('shared_project_id').value;
+  }
+  console.log('loading ' + shared_pid)
+  _lisa_shared_project_pull(shared_pid).then( function(remote_rev) {
+    _lisa_project_load(remote_rev);
+  }, function(err_msg) {
+    _lisa_log('Error: failed to retrive shared project: ' + err_msg);
+  });
+}
+
+function _lisa_save_shared_project() {
+  if(_lisa_store['project']['shared_fid'] === _LISA_SHARED_FILEID_MARKER &&
+     _lisa_store['project']['shared_rev'] === _LISA_SHARED_REV_MARKER &&
+     _lisa_store['project']['shared_rev_timestamp'] === _LISA_SHARED_REV_TIMESTAMP_MARKER) {
+    _lisa_log('Error: This is not a shared project and therefore cannot save it');
+    return;
+  }
+  var spid = _lisa_store['project']['shared_fid'];
+  var rev = _lisa_store['project']['shared_rev'];
+  _lisa_shared_project_push(spid, rev).then( function(response_str) {
+    var response = JSON.parse(response_str);
+    if ( response.hasOwnProperty('shared_fid') &&
+         response.hasOwnProperty('shared_rev') &&
+         response.hasOwnProperty('shared_rev_timestamp')
+       ) {
+      _lisa_store['project']['shared_fid'] = response['shared_fid'];
+      _lisa_store['project']['shared_rev'] = response['shared_rev'];
+      _lisa_store['project']['shared_rev_timestamp'] = response['shared_rev_timestamp'];
+      _lisa_log('Saved revision ' + _lisa_store['project']['shared_rev']);
+      _lisa_update_toolbar();
+    } else {
+      _lisa_log('Malformed response from server: ' + response_str);
+    }
+  }, function(err) {
+    _lisa_log('Error: failed to save [' + err + ']');
+  });
+}
+
+function _lisa_shared_project_exists(pid) {
+  return new Promise( function(ok_callback, err_callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.addEventListener('load', function() {
+      switch(xhr.statusText) {
+      case 'OK':
+        ok_callback(pid);
+        break;
+      default:
+        err_callback(pid, xhr.statusText);
+      }
+    });
+    xhr.addEventListener('timeout', function(e) {
+      err_callback(pid, 'timeout');
+    });
+    xhr.addEventListener('error', function(e) {
+      err_callback(pid, 'error')
+    });
+    xhr.open('HEAD', _LISA_SHARED_ENDPOINT + pid);
+    xhr.send();
+  }.bind(this));
+}
+
+function _lisa_shared_project_pull(pid) {
+  return new Promise( function(ok_callback, err_callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.addEventListener('load', function() {
+      switch(xhr.statusText) {
+      case 'OK':
+        ok_callback(xhr.responseText);
+        break;
+      default:
+        err_callback(xhr.statusText);
+      }
+    });
+    xhr.addEventListener('timeout', function(e) {
+      err_callback('Timeout');
+    });
+    xhr.addEventListener('error', function(e) {
+      err_callback('Error' )
+    });
+    xhr.open('GET', _LISA_SHARED_ENDPOINT + pid);
+    xhr.send();
+  }.bind(this));
+}
+
+function _lisa_shared_project_push(pid, rev) {
+  return new Promise( function(ok_callback, err_callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.addEventListener('load', function() {
+      switch(xhr.statusText) {
+      case 'OK':
+        ok_callback(xhr.responseText);
+        break;
+      default:
+        err_callback(xhr.statusText);
+      }
+    });
+    xhr.addEventListener('timeout', function(e) {
+      console.log('timeout');
+      err_callback(pid, 'timeout');
+    });
+    xhr.addEventListener('error', function(e) {
+      console.log(e.target)
+      err_callback(pid, 'error')
+    });
+
+    var payload = JSON.parse(JSON.stringify(_lisa_store));
+    payload['project']['shared_rev'] = _LISA_SHARED_REV_MARKER;
+    payload['project']['shared_rev_timestamp'] = _LISA_SHARED_REV_TIMESTAMP_MARKER;
+    if ( typeof(pid) === 'undefined' &&
+         typeof(rev) === 'undefined'
+       ) {
+      payload.project.pid = _VIA_PROJECT_ID_MARKER;
+      xhr.open('POST', _LISA_SHARED_ENDPOINT);
+    } else {
+      xhr.open('POST', _LISA_SHARED_ENDPOINT + pid + '?rev=' + rev);
+    }
+    xhr.timeout = _LISA_SHARED_ENDPOINT_TIMEOUT;
+    xhr.send(JSON.stringify(payload));
+  }.bind(this));
+}
+
+//
+// toolbar
+//
+function _lisa_update_toolbar() {
+  _lisa_toolbar.innerHTML = '';
+
+  var pname = document.createElement('div');
+  pname.innerHTML = _lisa_store['project']['project_name'];
+  _lisa_toolbar.appendChild(pname);
+
+  var nav = document.createElement('div');
+    nav.innerHTML = 'Showing from ' + _lisa_store['config']['navigation_from'] + ' to ' + _lisa_store['config']['navigation_to'] + ' (total ' + _lisa_store['files'].length + ')';
+    _lisa_toolbar.appendChild(nav);
+
+  if(_lisa_store['project']['shared_fid'] !== _LISA_SHARED_FILEID_MARKER) {
+    var pid =  document.createElement('div');
+    pid.innerHTML = 'Project ID: ' + _lisa_store['project']['shared_fid'];
+
+    var rev =  document.createElement('div');
+    rev.innerHTML = 'Version: ' + _lisa_store['project']['shared_rev'];
+
+    var save = document.createElement('button');
+    save.innerHTML = 'Save Changes';
+    save.addEventListener('click', _lisa_save_shared_project);
+
+    _lisa_toolbar.appendChild(pid);
+    _lisa_toolbar.appendChild(rev);
+    _lisa_toolbar.appendChild(save);
+  }
+}
+
+//
+// misc
+//
+function _lisa_show_annotation_stat() {
+  return new Promise(function(ok_callback, err_callback) {
+    var html = [];
+    html.push('<h1>Metadata Summary</h1>');
+    // collect all metadata stat
+    var stat = { 'fdata':{}, 'rdata':{} };
+    for(var fattr in _lisa_store['attributes']['file']) {
+      stat['fdata'][fattr] = {};
+    }
+    for(var rattr in _lisa_store['attributes']['region']) {
+      stat['rdata'][rattr] = {};
+    }
+    for(var findex=0; findex < _lisa_store['files'].length; ++findex) {
+      var file = _lisa_store['files'][findex];
+      for(var fattr in file['fdata']) {
+        var fmetadata = file['fdata'][fattr];
+        if(!stat['fdata'][fattr].hasOwnProperty(fmetadata)) {
+          stat['fdata'][fattr][fmetadata] = 0;
+        }
+        stat['fdata'][fattr][fmetadata] += 1;
+      }
+
+      for(var rindex=0; rindex < file['rdata'].length; ++rindex) {
+        for(var rattr in file['rdata'][rindex]) {
+          var rmetadata = file['rdata'][rindex][rattr];
+          if(_lisa_store['attributes']['region'][rattr]['atype'] === 'select') {
+            var oid = file['rdata'][rindex][rattr];
+            rmetadata = _lisa_store['attributes']['region'][rattr]['options'][oid];
+          }
+          if(!stat['rdata'][rattr].hasOwnProperty(rmetadata)) {
+            stat['rdata'][rattr][rmetadata] = 0;
+          }
+          stat['rdata'][rattr][rmetadata] += 1;
+        }
+      }
+    }
+
+    var table_style = '';
+    // show file metadata statistics
+    html.push('<h3>File Metadata</h3>');
+    html.push('<table style="' + table_style + '">');
+    html.push('<thead><tr><th>attribute name</th><th>attribute value</th><th>metadata count</th></tr></thead>');
+    html.push('<tbody>');
+    for(var fattr in stat['fdata']) {
+      for(var fmetadata in stat['fdata'][fattr]) {
+        html.push('<tr><td>' + fattr + '</td><td>' + fmetadata + '</td><td>' + stat['fdata'][fattr][fmetadata] + '</td></tr>');
+      }
+    }
+    html.push('</tbody></table>');
+
+    // show region metadata statistics
+    html.push('<h3>Region Metadata</h3>');
+    html.push('<table style="' + table_style + '">');
+    html.push('<thead><tr><th>attribute name</th><th>attribute value</th><th>metadata count</th></tr></thead>');
+    html.push('<tbody>');
+    for(var rattr in stat['rdata']) {
+      for(var rmetadata in stat['rdata'][rattr]) {
+        html.push('<tr><td>' + rattr + '</td><td>' + rmetadata + '</td><td>' + stat['rdata'][rattr][rmetadata] + '</td></tr>');
+      }
+    }
+    html.push('</tbody></table>');
+
+    var window_features = 'toolbar=no,menubar=no,location=no,resizable=yes,scrollbars=yes,status=no';
+    window_features += ',width=800,height=600';
+    try {
+      var annotation_data_window = window.open('', 'Metadata Summary', window_features);
+      annotation_data_window.document.body.innerHTML = html.join('\n');
+      ok_callback();
+    } catch(ex) {
+      err_callback(ex.toString());
+    }
+  });
+}
+
+//
+// util
+//
+function _lisa_file_type_from_file_extension(fn) {
+  var ext = fn.split('.').pop().toLowerCase();
+  var file_type = '';
+  switch(ext) {
+  case 'mp4':
+  case 'avi':
+  case 'webm':
+  case 'mov':
+  case 'ogg':
+  case 'ogv':
+    file_type = 'video';
+    break;
+  case 'mp3':
+  case 'wav':
+  case 'm4a':
+  case 'oga':
+    file_type = 'audio';
+    break;
+  case 'jpeg':
+  case 'jpg':
+  case 'png':
+  case 'bmp':
+  case 'tiff':
+    file_type = 'image';
+    break;
+  default:
+    file_type = 'UNKNOWN'
+  }
+  return file_type;
+}
+
+function _lisa_parse_config_from_cookies() {
+  var config = [];
+  // If we are loading a shared project then there is no project ID
+  // and if this is the first time we are running LISA there will be
+  // no cookie with information to parse.  Skip the rest of function
+  // now to avoid issues when the two happen at the same time (see
+  // issue #23).
+  if (! _lisa_store['project']['project_id'] || ! document.cookie)
+    return config;
+  var all_cookies = document.cookie;
+  var tok = all_cookies.split(';');
+  var ntok = tok.length;
+  for(var i=0; i<ntok; ++i) {
+    var keyval = tok[i].trim();
+    var keyval_tok = keyval.split('=');
+    if(keyval_tok[0] === _lisa_store['project']['project_id']) {
+      var param = keyval_tok[1].split('|');
+      for(var j=0; j<param.length; ++j) {
+        config.push(param[j]);
+      }
+    }
+  }
+  return config;
+}
+
+function _lisa_split_file_in_lines(text) {
+  const line_split_regex = new RegExp('\r\n|\n|\r', 'g');
+  return text.split(line_split_regex).filter(
+    x => x.length  // ignore empty lines (issue #3)
+  );
+}
+</script>
+<!-- END: Contents of file: lisa.js-->
+    <script>
+      //__ENABLED_BY_PACK_SCRIPT___lisa_load_demo_project();
+    </script>
+  </body>
+</html>
