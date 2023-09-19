@@ -854,7 +854,10 @@ function _lisa_on_item_load(e) {
     }
   }
 
-  _lisa_toggle_charater_region_ids(!_lisa_characters_hidden);
+  if (!_lisa_bbox_labels_hidden) {
+    _lisa_toggle_charater_region_ids(false);
+    _lisa_toggle_charater_region_ids(true);
+  }
 
   // item toolbar and metadata
   var item_caption_container = document.createElement('figcaption');
@@ -1401,6 +1404,9 @@ function _lisa_img_mousemove_handler(e) {
       return;
     }
     if (_lisa_store['files'][this.id]['regions'][current_region_index].length != 4) return;
+    if (_lisa_store['files'][this.id]['rdata'][current_region_index]["bbox"] == undefined) {
+      return;
+    }
     if (_lisa_store['files'][this.id]['rdata'][current_region_index]["bbox"] != "character") {
       _lisa_sel_region_for_connection(this, current_region_index);
       return;
@@ -2611,6 +2617,8 @@ function _lisa_export_csv() {
 // attribute editor
 //
 function _lisa_show_region_attributes() {
+  
+  _lisa_toggle_charater_region_ids(false);
   _lisa_attribute_container.classList.remove('_lisa_hide');
   _lisa_attribute_container.innerHTML = '';
 
@@ -2651,7 +2659,9 @@ function _lisa_show_region_attributes() {
   table.appendChild(header_row);
   table.appendChild(input_row);
   _lisa_attribute_container.appendChild(table);
-
+  if (!_lisa_bbox_labels_hidden) {
+    _lisa_toggle_charater_region_ids(true);
+  }
 }
 
 
