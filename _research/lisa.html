@@ -615,10 +615,16 @@ function _lisa_toggle_charater_region_ids(turn_it_on) {
     let id = region.id.split('_');
     let image_id = id[0] * 1;
     let region_id = id[1] * 1;
+    if (!("bbox" in _lisa_store['files'][image_id]['rdata'][region_id]))
+      continue;
     if (_lisa_store['files'][image_id]['rdata'][region_id]["bbox"] != "character") {
       continue;
     }
+    try {
     var connected_regions = dfs(image_id, region_id);
+    } catch {
+      continue;
+    }
     if (connected_regions.length == 1) {
       continue;
     }
