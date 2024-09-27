@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        #projectInput {
+            margin-bottom: 20px;
+        }
+        #imageContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .panel-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            width: 100%;
+        }
+        .panel-image {
+            max-width: 50%;
+            height: auto;
+        }
+        .panel-description {
+            max-width: 40%;
+        }
+        #navigation {
+            margin-top: 20px;
+        }
+        button {
+            margin: 0 10px;
+        }
+        .highlight {
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 3px;
+        }
+        .bounding-box {
+            position: absolute;
+            border: 4px solid red;
+            pointer-events: none;
+        }
+        .bounding-box-list {
+            display: none;
+        }
+        .panel-container {
+            position: relative;
+        }
+        .potentialHighlightSpan {
+            background-color: rgba(200, 200, 200, 0.523);
+            cursor: pointer;
+        }
+        .characterSpan {
+            background-color: rgba(0, 128, 255, 0.2);
+            cursor: pointer;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .suggestion-box {
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .suggestion-textarea {
+            width: 100%;
+            height: 150px;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+        .suggestion-buttons {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .suggestion-buttons button {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="projectInput">
+        <label for="projectId">Enter Project ID:</label>
+        <input type="text" id="projectId" value="">
+        <button onclick="loadProject()">Load Project</button>
+    </div>
+    <div id="navigation">
+        <button onclick="navigate(-1)">Previous</button>
+        <button onclick="navigate(1)">Next</button>
+    </div>
+    <div id="pageNumber">Page -/-</div>
+    <div id="imageContainer"></div>
+    <div id="loadingSpinner" style="display: none;">Loading...</div>
+    <button onclick="saveProject()">Save Project</button>
+
+    <script>
+        let USER = "ROOT"; // ROOT, ANNOTATOR
+        let projectData;
+        let pageIndex = 0;
+        let highlightColors = [
+            'rgba(255, 255, 0, 1)',  // Yellow
+            'rgba(0, 255, 255, 1)',  // Cyan
+            'rgba(255, 0, 255, 1)',  // Magenta
+            'rgba(255, 165, 0, 1)',  // Orange
+            'rgba(0, 255, 0, 1)'     // Lime
+        ];
+        let currentHighlightIndex = 0;
+        let highlightBoxPairs = {};
+        let imageCache = {};
+        let pageCache = {};
+
+        async function loadProject() {
+            // Clear all caches and states
+            imageCache = {};
+            pageCache = {};
+            highlightBoxPairs = {};
+            currentHighlightIndex = 0;
+            
+            // Reset the image container
+            document.getElementById('imageContainer').innerHTML = '';
+            
+            // Reset the page index
+            pageIndex = 0;
+            
+            // Clear any existing project data
+            projectData = null;
+            const projectId = document.getElementById('projectId').value.trim();
+            try {
+                const response = await fetch(`https://meru.robots.ox.ac.uk/store/${projectId}`);
+                projectData = await response.json();
+                pageIndex = 0;
+
+                // Show loading spinner
+                document.getElementById('loadingSpinner').style.display = 'block';
+                
+                await preloadImages();
+                
+                // Hide loading spinner
+                document.getElementById('loadingSpinner').style.display = 'none';
+
+                displayImage();
+                updateNavigationButtons();
+            } catch (error) {
+                console.log(error);
+                console.error('Error loading project:', error);
+                alert('Failed to load project. Please check the project ID and try again.');
+            }
+        }
+
+        async function preloadImages() {
+            if (!projectData || !projectData.files) return;
+            const imagePaths = projectData.files.map(file => `https://meru.robots.ox.ac.uk/dset/image/comics/mloader_downloads/${file.path}`);
+            for (const imagePath of imagePaths) {
+                if (!imageCache[imagePath]) {
+                    imageCache[imagePath] = new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        img.onload = () => resolve(img);
+                        img.onerror = reject;
+                        img.src = imagePath;
+                    });
+                }
+            }
+            
+            await Promise.all(Object.values(imageCache));
+        }
+
+        function clearDisplay() {
+            // Cache current page state before clearing
+            const currentPath = projectData.files[pageIndex].path;
+            pageCache[currentPath] = {
+                html: document.getElementById('imageContainer').innerHTML,
+            };
+            
+            document.getElementById('imageContainer').innerHTML = '';
+            highlightBoxPairs = {};
+        }
+
+        async function displayImage() {
+            if (!projectData || !projectData.files || projectData.files.length === 0) return;
+
+            // Set the page number
+            const pageNumber = document.getElementById('pageNumber');
+            pageNumber.textContent = `Page ${pageIndex + 1} of ${projectData.files.length}`;
+
+            const fileData = projectData.files[pageIndex];
+            const imagePath = `https://meru.robots.ox.ac.uk/dset/image/comics/mloader_downloads/${fileData.path}`;
+            const panel_data = fileData.panel_data;
+
+            const imageContainer = document.getElementById('imageContainer');
+
+            // Check if we have a cached version of this page
+            if (pageCache[fileData.path]) {
+                await gracefullyLoadFromCache(pageCache[fileData.path]);
+                return;
+            }
+
+            // If not cached, create the page content as before
+            imageContainer.innerHTML = '';
+
+            const img = await imageCache[imagePath];
+
+            const panelPromises = panel_data.map(async (panel, index) => {
+                const [x1, y1, x2, y2] = panel.panel_bbox;
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = x2 - x1;
+                canvas.height = y2 - y1;
+                ctx.drawImage(img, x1, y1, x2 - x1, y2 - y1, 0, 0, canvas.width, canvas.height);
+
+                const panelContainer = document.createElement('div');
+                panelContainer.className = 'panel-container';
+
+                const panelImage = new Image();
+                panelImage.src = canvas.toDataURL();
+                panelImage.className = 'panel-image';
+
+                const imageLoadPromise = new Promise(resolve => {
+                    panelImage.onload = resolve;
+                });
+
+                const panelDescription = document.createElement('div');
+                panelDescription.className = 'panel-description';
+
+                if (panel.suggestion) {
+                    panelContainer.dataset.suggestion = panel.suggestion;
+                }
+                
+                // Create potential highlight spans
+                let descriptionHTML = panel.description;
+                let listOfBoundingBoxList = [];
+                const zipped = panel.phrases.map((phrase, i) => ({ phrase, bboxes: panel.bboxes[i], type: panel.type[i] }));
+                zipped.sort((a, b) => b.phrase[0] - a.phrase[0]); // Sort by start index in descending order
+                zipped.forEach(({phrase: [start, end], bboxes, type}) => {
+                    const phrase = descriptionHTML.substring(start, end);
+                    if (type === "suggested_phrase") {
+                        if (bboxes === null) {
+                            descriptionHTML = descriptionHTML.substring(0, start) +
+                            `<span class="potentialHighlightSpan" data-start="${start}" data-end="${end}">${phrase}</span>` +
+                            descriptionHTML.substring(end);
+                        } else {
+                            const uuid = crypto.randomUUID();
+                            const highlightColor = highlightColors[currentHighlightIndex % highlightColors.length].replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/, 'rgba($1, $2, $3, 0.5)');;
+                            currentHighlightIndex++;    
+                            descriptionHTML = descriptionHTML.substring(0, start) +
+                            `<span class="highlight potentialHighlightSpan" data-uuid="${uuid}" data-start="${start}" data-end="${end}" style="background-color: ${highlightColor}">${phrase}</span>` +
+                            descriptionHTML.substring(end);
+
+                            const boundingBoxList = document.createElement('div');
+                            boundingBoxList.className = 'bounding-box-list';
+                            boundingBoxList.setAttribute('data-uuid', uuid);
+                            bboxes.forEach((bbox) => {
+                                const boundingBox = document.createElement('div');
+                                boundingBox.className = 'bounding-box';
+                                const [x, y, width, height] = bbox;
+                                updateBoundingBox(boundingBox, panelImage, x, y, width, height);
+                                boundingBoxList.appendChild(boundingBox);
+                            });
+                            listOfBoundingBoxList.push(boundingBoxList);
+                        }
+                    } else if (type === "character" && bboxes.every(bbox => bbox !== null)) {
+                        descriptionHTML = descriptionHTML.substring(0, start) +
+                        `<span class="characterSpan" data-start="${start}" data-end="${end}" data-bboxes="${bboxes.map(bbox => bbox.join(',')).join(';')}">${phrase}</span>` +
+                        descriptionHTML.substring(end);
+                    } else if (type === "manual_phrase" && bboxes !== null) {
+                        const uuid = crypto.randomUUID();
+                        const highlightColor = highlightColors[currentHighlightIndex % highlightColors.length].replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/, 'rgba($1, $2, $3, 0.5)');;
+                        currentHighlightIndex++;
+                        descriptionHTML = descriptionHTML.substring(0, start) +
+                        `<span class="highlight" data-uuid="${uuid}" data-start="${start}" data-end="${end}" style="background-color: ${highlightColor}">${phrase}</span>` +
+                        descriptionHTML.substring(end);
+                        const boundingBoxList = document.createElement('div');
+                        boundingBoxList.className = 'bounding-box-list';
+                        boundingBoxList.setAttribute('data-uuid', uuid);
+                        bboxes.forEach((bbox) => {
+                            const boundingBox = document.createElement('div');
+                            boundingBox.className = 'bounding-box';
+                            const [x, y, width, height] = bbox;
+                            updateBoundingBox(boundingBox, panelImage, x, y, width, height);
+                            boundingBoxList.appendChild(boundingBox);
+                        });
+                        listOfBoundingBoxList.push(boundingBoxList);
+                    }
+                });
+                panelDescription.innerHTML = descriptionHTML;
+                
+                // Add Edit button
+                const editButton = document.createElement('button');
+                editButton.textContent = "Edit";
+                editButton.style.display = (USER == "ROOT") ? "block" : "none";
+                editButton.className = "edit";  // Add this line
+                editButton.onclick = () => toggleEditMode(editButton);
+
+                const suggestButton = document.createElement('button');
+                suggestButton.textContent = "Suggest";
+                suggestButton.className = "suggest";  // Add this line
+                suggestButton.onclick = () => suggestEdits(panelDescription, panelImage, panelContainer);
+
+
+                panelContainer.appendChild(panelImage);
+                panelContainer.appendChild(panelDescription);
+                panelContainer.appendChild(editButton); // Append the edit button
+                panelContainer.appendChild(suggestButton); // Append the suggest button
+
+                listOfBoundingBoxList.forEach(boundingBoxList => {
+                    panelContainer.appendChild(boundingBoxList);
+                });
+                imageContainer.appendChild(panelContainer);
+
+                await imageLoadPromise;
+
+                setupPotentialHighlights(panelDescription, panelImage, panelContainer);
+                setupTextSelection(panelDescription, panelImage, panelContainer);
+                setupCharacterSpans(panelDescription, panelImage, panelContainer);
+                reconnectExistingHighlights(panelDescription, panelImage, panelContainer);
+            });
+
+            await Promise.all(panelPromises);
+            updateAllCharacterBoxes();
+        }
+
+        function gracefullyLoadFromCache(cache) {
+            document.getElementById('imageContainer').innerHTML = cache.html;
+            setTimeout(() => {}, 100);
+            highlightBoxPairs = {};
+            
+            const panelContainers = document.querySelectorAll('.panel-container');
+            panelContainers.forEach(panelContainer => {
+                const panelDescription = panelContainer.querySelector('.panel-description');
+                const panelImage = panelContainer.querySelector('.panel-image');
+                
+                // Get the edit button for this panel
+                const editButton = panelContainer.querySelector('button.edit');
+                editButton.onclick = () => toggleEditMode(editButton, panelDescription, panelImage, panelContainer);
+                const suggestButton = panelContainer.querySelector('button.suggest');
+                suggestButton.onclick = () => suggestEdits(panelDescription, panelImage, panelContainer);
+                setupTextSelection(panelDescription, panelImage, panelContainer);
+                setupPotentialHighlights(panelDescription, panelImage, panelContainer);
+                setupCharacterSpans(panelDescription, panelImage, panelContainer);
+                reconnectExistingHighlights(panelDescription, panelImage, panelContainer);
+            });
+        }
+
+        function reconnectExistingHighlights(panelDescription, panelImage, panelContainer) {
+            // Reconnect highlights and bounding boxes
+            const highlights = panelDescription.querySelectorAll('.highlight');
+            highlights.forEach(highlight => {
+                const uuid = highlight.getAttribute('data-uuid');
+                const boundingBoxList = panelContainer.querySelector(`.bounding-box-list[data-uuid="${uuid}"]`);
+                if (boundingBoxList) {
+                    setupStateManagement(highlight, boundingBoxList);
+                    setupHighlightInteractions(highlight, boundingBoxList);
+                    highlightBoxPairs[uuid] = { highlight, box: boundingBoxList };
+                    // Update all bounding boxes in the list
+                    boundingBoxList.querySelectorAll('.bounding-box').forEach(boundingBox => {
+                        updateBoundingBox(boundingBox, panelImage, 
+                            parseFloat(boundingBox.dataset.x), 
+                            parseFloat(boundingBox.dataset.y), 
+                            parseFloat(boundingBox.dataset.width), 
+                            parseFloat(boundingBox.dataset.height));
+                    });
+                }
+            });
+        }
+
+        function updateSpanStartEndIndices(panelDescription, span, spanNode, startOffset, endOffset) {
+            let currentNode = panelDescription.firstChild;
+            let totalOffset = 0;
+            
+            while (currentNode !== spanNode) {
+                totalOffset += currentNode.textContent.length;
+                currentNode = currentNode.nextSibling;
+            }
+            
+            const globalStartOffset = totalOffset + startOffset;
+            const globalEndOffset = globalStartOffset + (endOffset - startOffset);
+            
+            span.setAttribute('data-start', globalStartOffset);
+            span.setAttribute('data-end', globalEndOffset);
+        }
+
+        function setupTextSelection(panelDescription, panelImage, panelContainer) {
+            let preventClickPropagation = false;
+            panelDescription.addEventListener('mouseup', () => {
+                const selection = window.getSelection();
+                if (selection.toString().trim() !== '') {
+                    
+                    // Check for overlap with existing highlights
+                    const range = selection.getRangeAt(0);
+                    const existingHighlights = panelDescription.querySelectorAll('.highlight, .potentialHighlightSpan, .characterSpan');
+                    let hasOverlap = false;
+                    existingHighlights.forEach(highlight => {
+                        if (range.intersectsNode(highlight)) {
+                            hasOverlap = true;
+                        }
+                    });
+                    if (hasOverlap) {
+                        return;
+                    }
+
+                    preventClickPropagation = true;
+                    const uuid = crypto.randomUUID();
+                    const highlightSpan = document.createElement('span');
+                    highlightSpan.className = 'highlight';
+                    highlightSpan.isSelected = true;
+                    highlightSpan.setAttribute('data-uuid', uuid);
+                    const textContent = panelDescription.textContent;
+                    const rangeText = range.toString();
+
+                    updateSpanStartEndIndices(panelDescription, highlightSpan, range.startContainer, range.startOffset, range.endOffset);
+                    
+                    highlightSpan.style.backgroundColor = highlightColors[currentHighlightIndex % highlightColors.length];
+                    range.surroundContents(highlightSpan);
+
+                    const boundingBoxList = document.createElement('div');
+                    boundingBoxList.className = 'bounding-box-list';
+                    boundingBoxList.setAttribute('data-uuid', uuid);
+                    panelContainer.appendChild(boundingBoxList);
+
+                    setupBoundingBoxDrawing(panelImage, boundingBoxList, highlightSpan);
+                    setupHighlightInteractions(highlightSpan, boundingBoxList);
+                    setupStateManagement(highlightSpan, boundingBoxList);
+
+                    highlightBoxPairs[uuid] = { highlight: highlightSpan, box: boundingBoxList };
+
+                    currentHighlightIndex++;
+                }
+            });
+            panelDescription.addEventListener('click', (event) => {
+                if (preventClickPropagation) {
+                    event.stopPropagation();
+                    preventClickPropagation = false;
+                }
+            });
+        }
+
+        function setupStateManagement(highlightSpan, boundingBoxList) {
+            const uuid = highlightSpan.getAttribute('data-uuid');
+            highlightSpan.select_it = function() {
+                highlightSpan.isSelected = true;
+                highlightSpan.style.backgroundColor = highlightSpan.style.backgroundColor.replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/, 'rgba($1, $2, $3, 1)');
+                boundingBoxList.style.display = 'block';
+            };
+
+            highlightSpan.deselect_it = function() {
+                highlightSpan.isSelected = false;
+                highlightSpan.style.backgroundColor = highlightSpan.style.backgroundColor.replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/, 'rgba($1, $2, $3, 0.5)');
+                boundingBoxList.style.display = 'none';
+            };
+
+            highlightSpan.delete_it = function() {
+                delete highlightBoxPairs[uuid];
+                boundingBoxList.remove();
+                // Remove highlight properties but keep potentialHighlightSpan properties
+                highlightSpan.classList.remove('highlight');
+                highlightSpan.removeAttribute('data-uuid');
+                highlightSpan.style.backgroundColor = '';
+                highlightSpan.isSelected = false;
+                highlightSpan.hasEventListener = false;
+                
+                // If the span still has the potentialHighlightSpan class, set up the potential highlight again
+                if (highlightSpan.classList.contains('potentialHighlightSpan')) {
+                    const panelContainer = highlightSpan.closest('.panel-container');
+                    const panelDescription = panelContainer.querySelector('.panel-description');
+                    const panelImage = panelContainer.querySelector('.panel-image');
+                    setupPotentialHighlights(panelDescription, panelImage, panelContainer);
+                } else {
+                    // Remove the span element and merge its text content with surrounding text
+                    const textContent = highlightSpan.textContent;
+                    const textNode = document.createTextNode(textContent);
+                    highlightSpan.parentNode.replaceChild(textNode, highlightSpan);
+                }
+            };
+        }
+
+        function setupBoundingBoxDrawing(panelImage, boundingBoxList, highlightSpan) {
+            let isDrawing = false;
+            let hasStarted = false;
+            let startX, startY;
+
+            const drawHandler = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const rect = panelImage.getBoundingClientRect();
+                const width = (e.clientX - rect.left) / rect.width;
+                const height = (e.clientY - rect.top) / rect.height;
+                const boundingBox = boundingBoxList.lastChild;
+                updateBoundingBox(boundingBox, panelImage, 
+                    Math.min(startX, width), Math.min(startY, height), 
+                    Math.abs(width - startX), Math.abs(height - startY));
+            };
+
+            const startDrawingHandler = (e) => {
+                e.preventDefault();
+                isDrawing = true;
+                hasStarted = true;
+                const rect = panelImage.getBoundingClientRect();
+                startX = (e.clientX - rect.left) / rect.width;
+                startY = (e.clientY - rect.top) / rect.height;
+
+                const boundingBox = document.createElement('div');
+                boundingBox.className = 'bounding-box';
+                boundingBoxList.appendChild(boundingBox);
+
+                updateBoundingBox(boundingBox, panelImage, startX, startY, 0, 0);
+                boundingBoxList.style.display = 'block';
+            };
+
+            const endDrawingHandler = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+                isDrawing = false;
+            };
+
+            panelImage.addEventListener('mousedown', startDrawingHandler);
+            panelImage.addEventListener('mouseup', endDrawingHandler);
+            panelImage.addEventListener('mouseleave', endDrawingHandler);
+            panelImage.addEventListener('mousemove', drawHandler);
+            panelImage.addEventListener('dragstart', (e) => e.preventDefault());
+
+            // Function to remove all event listeners from panelImage
+            const removeAllListeners = () => {
+                panelImage.removeEventListener('mousedown', startDrawingHandler);
+                panelImage.removeEventListener('mouseup', endDrawingHandler);
+                panelImage.removeEventListener('mouseleave', endDrawingHandler);
+                panelImage.removeEventListener('mousemove', drawHandler);
+            };
+
+            // Add a document click handler
+            const clickHandler = (event) => {
+                if (event.target !== panelImage) {
+                    removeAllListeners();
+                    if (!hasStarted) {  
+                        highlightSpan.delete_it();
+                        document.removeEventListener('click', clickHandler);
+                    }
+                }
+            };
+            document.addEventListener('click', clickHandler);
+        }
+
+        function updateBoundingBox(boundingBox, panelImage, x, y, width, height) {
+            const rect = panelImage.getBoundingClientRect();
+            boundingBox.style.left = `${x * rect.width + panelImage.offsetLeft}px`;
+            boundingBox.style.top = `${y * rect.height + panelImage.offsetTop}px`;
+            boundingBox.style.width = `${width * rect.width}px`;
+            boundingBox.style.height = `${height * rect.height}px`;
+            // Store percentages as data attributes
+            boundingBox.dataset.x = x;
+            boundingBox.dataset.y = y;
+            boundingBox.dataset.width = width;
+            boundingBox.dataset.height = height;
+
+        }
+
+        function handleResize() {
+            Object.values(highlightBoxPairs).forEach(pair => {
+                const { box, highlight } = pair;
+                const panelImage = box.closest('.panel-container').querySelector('.panel-image');
+                box.querySelectorAll('.bounding-box').forEach(boundingBox => {
+                    updateBoundingBox(boundingBox, panelImage, 
+                        parseFloat(boundingBox.dataset.x), 
+                        parseFloat(boundingBox.dataset.y), 
+                        parseFloat(boundingBox.dataset.width), 
+                        parseFloat(boundingBox.dataset.height));
+                });
+            });
+
+            // Add this line to update character boxes on resize
+            updateAllCharacterBoxes();
+        }
+
+        window.addEventListener('resize', handleResize);
+
+        function setupHighlightInteractions(highlightSpan, boundingBoxList) {
+            highlightSpan.addEventListener('mouseover', () => {               
+                boundingBoxList.style.display = 'block';
+            });
+
+            highlightSpan.addEventListener('mouseout', () => {
+                if (!highlightSpan.isSelected) {
+                    boundingBoxList.style.display = 'none';
+                }
+            });
+
+            highlightSpan.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Deselect all other highlight spans
+                Object.values(highlightBoxPairs).forEach(pair => {
+                    if (pair.highlight !== highlightSpan) {
+                        pair.highlight.deselect_it();
+                    }
+                });
+                if (!highlightSpan.isSelected) {
+                    highlightSpan.select_it();
+                }
+            });
+        }
+
+        function handleClickOutside() {
+            document.addEventListener('click', (event) => {
+                const isClickInsideAnyHighlight = Object.values(highlightBoxPairs).some(pair => 
+                    pair.highlight.contains(event.target)
+                );
+                const isClickInsideImage = event.target.classList.contains('panel-image');
+
+                if (!isClickInsideAnyHighlight && !isClickInsideImage) {
+                    Object.values(highlightBoxPairs).forEach(pair => {
+                        pair.highlight.deselect_it();
+                    });
+                }
+            });
+        }
+
+        function handleDeleteHighlight() {
+            // add listener for if user presses backspace or delete while a highlight is selected
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Backspace' || event.key === 'Delete') {
+                    if (Object.values(highlightBoxPairs).some(pair => pair.highlight.isSelected)) {
+                        Object.values(highlightBoxPairs).forEach(pair => {
+                            if (pair.highlight.isSelected) {
+                                pair.highlight.delete_it();
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // Call this function once to set up the global click listener
+        handleClickOutside();
+        handleDeleteHighlight();
+
+        function navigate(direction) {
+            if (!projectData || !projectData.files) return;
+
+            clearDisplay();
+
+            pageIndex += direction;
+            pageIndex = Math.max(0, Math.min(pageIndex, projectData.files.length - 1));
+            
+            setTimeout(() => {
+                displayImage();
+                updateNavigationButtons();
+            }, 100);
+        }
+
+        function updateNavigationButtons() {
+            const prevButton = document.querySelector('#navigation button:nth-child(1)');
+            const nextButton = document.querySelector('#navigation button:nth-child(2)');
+
+            prevButton.style.display = pageIndex === 0 ? 'none' : 'inline-block';
+            nextButton.style.display = pageIndex === projectData.files.length - 1 ? 'none' : 'inline-block';
+        }
+
+        function setupPotentialHighlights(panelDescription, panelImage, panelContainer) {
+            const potentialHighlights = panelDescription.querySelectorAll('.potentialHighlightSpan:not(.highlight)');
+            potentialHighlights.forEach(span => {
+                if (!span.hasEventListener) {
+                    const clickHandler = (e) => {
+                        e.stopPropagation();
+                        const uuid = crypto.randomUUID();
+                        
+                        // Remove the click listener
+                        span.removeEventListener('click', clickHandler);
+                        span.hasEventListener = false;
+                        
+                        // Modify the existing span
+                        span.classList.add('highlight');
+                        span.isSelected = true;
+                        span.setAttribute('data-uuid', uuid);
+                        span.style.backgroundColor = highlightColors[currentHighlightIndex % highlightColors.length];
+
+                        const boundingBoxList = document.createElement('div');
+                        boundingBoxList.className = 'bounding-box-list';
+                        boundingBoxList.setAttribute('data-uuid', uuid);
+                        panelContainer.appendChild(boundingBoxList);
+
+                        setupBoundingBoxDrawing(panelImage, boundingBoxList, span);
+                        setupHighlightInteractions(span, boundingBoxList);
+                        setupStateManagement(span, boundingBoxList);
+
+                        highlightBoxPairs[uuid] = { highlight: span, box: boundingBoxList };
+
+                        currentHighlightIndex++;
+                    };
+                    
+                    span.addEventListener('click', clickHandler);
+                    span.hasEventListener = true;
+                }
+            });
+        }
+
+        function setupCharacterSpans(panelDescription, panelImage, panelContainer) {
+            const characterSpans = panelDescription.querySelectorAll('.characterSpan');
+            characterSpans.forEach((span, index) => {
+                const bboxes = span.dataset.bboxes.split(';').map(bbox => bbox.split(',').map(Number));
+                
+                const uuid = `char-${crypto.randomUUID()}`;
+                span.setAttribute('data-uuid', uuid);
+                
+                const boundingBoxList = document.createElement('div');
+                boundingBoxList.className = 'bounding-box-list character-box-list';
+                boundingBoxList.setAttribute('data-uuid', uuid);
+                bboxes.forEach(([x, y, width, height]) => {
+                    const boundingBox = document.createElement('div');
+                    boundingBox.className = 'bounding-box';
+                    boundingBoxList.appendChild(boundingBox);
+                    updateBoundingBox(boundingBox, panelImage, x, y, width, height);
+                });
+                panelContainer.appendChild(boundingBoxList);
+
+                span.addEventListener('mouseover', () => {
+                    const bboxes = panelContainer.querySelector(`.character-box-list[data-uuid="${uuid}"]`);
+                    if (bboxes) bboxes.style.display = 'block';
+                });
+
+                span.addEventListener('mouseout', () => {
+                    const box = panelContainer.querySelector(`.character-box-list[data-uuid="${uuid}"]`);
+                    if (box) box.style.display = 'none';
+                });
+            });
+        }
+
+        // Add this function to update all character boxes
+        function updateAllCharacterBoxes() {
+            const panelContainers = document.querySelectorAll('.panel-container');
+            panelContainers.forEach(panelContainer => {
+                const panelImage = panelContainer.querySelector('.panel-image');
+                const characterSpans = panelContainer.querySelectorAll('.characterSpan');
+                characterSpans.forEach(span => {
+                    const uuid = span.getAttribute('data-uuid');
+                    const boundingBoxList = panelContainer.querySelector(`.character-box-list[data-uuid="${uuid}"]`);
+                    if (boundingBoxList) {
+                        const bboxes = span.dataset.bboxes.split(';').map(bbox => bbox.split(',').map(Number));
+                        bboxes.forEach(([x, y, width, height], index) => {
+                            const boundingBox = boundingBoxList.children[index];
+                            if (boundingBox) {
+                                updateBoundingBox(boundingBox, panelImage, x, y, width, height);
+                            }
+                        });
+                    }
+                });
+            });
+        }
+
+        function toggleEditMode(button) {
+            const panelDescription = button.previousElementSibling;
+            if (panelDescription.isContentEditable) {
+                panelDescription.contentEditable = "false";
+                button.textContent = "Edit";
+                // Update start and end indices for all spans within the panel description
+                const spans = panelDescription.querySelectorAll('span[data-start][data-end]');
+                spans.forEach(span => {
+                    updateSpanStartEndIndices(panelDescription, span, span, 0, span.textContent.length);
+                });
+                // Remove the cancel button if it exists
+                const cancelButton = button.nextSibling;
+                if (cancelButton && cancelButton.textContent === "Cancel") {
+                    cancelButton.remove();
+                }
+            } else {
+                panelDescription.contentEditable = "true";
+                button.textContent = "Save";
+                // Store the original content
+                panelDescription.dataset.originalContent = panelDescription.innerHTML;
+
+                // Add a cancel button
+                const cancelButton = document.createElement('button');
+                cancelButton.textContent = "Cancel";
+                cancelButton.onclick = () => {
+                    panelDescription.innerHTML = panelDescription.dataset.originalContent;
+                    panelDescription.contentEditable = "false";
+                    button.textContent = "Edit";
+                    cancelButton.remove();
+                };
+                button.parentNode.insertBefore(cancelButton, button.nextSibling);
+            }
+        }
+
+        function suggestEdits(panelDescription, panelImage, panelContainer) {
+            let modalOverlay = panelContainer.querySelector('.modal-overlay');
+            if (!modalOverlay) {
+                modalOverlay = document.createElement('div');
+                modalOverlay.className = 'modal-overlay';
+                
+                const suggestionBox = document.createElement('div');
+                suggestionBox.className = 'suggestion-box';
+                
+                const textarea = document.createElement('textarea');
+                textarea.className = 'suggestion-textarea';
+                textarea.placeholder = 'Please tell me what is wrong with the caption. Please use complete sentences. Please be specific.';
+                
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'suggestion-buttons';
+                
+                const saveButton = document.createElement('button');
+                saveButton.textContent = 'Save';
+
+                const cancelButton = document.createElement('button');
+                cancelButton.textContent = 'Cancel';
+                
+                buttonsDiv.appendChild(cancelButton);
+                buttonsDiv.appendChild(saveButton);
+                
+                suggestionBox.appendChild(textarea);
+                suggestionBox.appendChild(buttonsDiv);
+                modalOverlay.appendChild(suggestionBox);
+                panelContainer.appendChild(modalOverlay);
+            }
+            
+            const saveButton = modalOverlay.querySelector('button:nth-child(2)');
+            if (!saveButton.onclick) {
+                saveButton.onclick = () => {
+                    panelContainer.dataset.suggestion = textarea.value;
+                    modalOverlay.style.display = 'none';
+                };
+            }
+            const cancelButton = modalOverlay.querySelector('button:nth-child(1)');
+            if (!cancelButton.onclick) {    
+                cancelButton.onclick = () => {
+                    modalOverlay.style.display = 'none';
+                };
+            }
+            
+            const textarea = modalOverlay.querySelector('.suggestion-textarea');
+            
+            // Load existing suggestion if any
+            if (panelContainer.dataset.suggestion) {
+                textarea.value = panelContainer.dataset.suggestion;
+            } else {
+                textarea.value = '';
+            }
+            
+            modalOverlay.style.display = 'flex';
+            
+            // Focus on the textarea
+            setTimeout(() => {
+                textarea.focus();
+            }, 0);
+        }
+
+        function shared_project_push(pid, rev) {
+            return new Promise( function(ok_callback, err_callback) {
+                var xhr = new XMLHttpRequest();
+                xhr.addEventListener('load', function() {
+                switch(xhr.statusText) {
+                case 'OK':
+                    ok_callback(xhr.responseText);
+                    break;
+                default:
+                    err_callback(xhr.statusText);
+                }
+                });
+                xhr.addEventListener('timeout', function(e) {
+                console.log('timeout');
+                err_callback(pid, 'timeout');
+                });
+                xhr.addEventListener('error', function(e) {
+                console.log(e.target)
+                err_callback(pid, 'error')
+                });
+
+                var payload = JSON.parse(JSON.stringify(projectData));
+                payload['project']['shared_rev'] = "__FILE_REV_ID__";
+                payload['project']['shared_rev_timestamp'] = '__FILE_REV_TIMESTAMP__';
+                if ( typeof(pid) === 'undefined' &&
+                    typeof(rev) === 'undefined'
+                ) {
+                payload.project.pid = _VIA_PROJECT_ID_MARKER;
+                xhr.open('POST', 'https://meru.robots.ox.ac.uk/store/');
+                } else {
+                xhr.open('POST', 'https://meru.robots.ox.ac.uk/store/' + pid + '?rev=' + rev);
+                }
+                xhr.timeout = 6000;
+                xhr.send(JSON.stringify(payload));
+            }.bind(this));
+            }
+
+        async function saveProject() {
+            // Store the current page index
+            const currentPageIndex = pageIndex;
+
+            // Cache the current page state
+            clearDisplay();
+
+            // Iterate through all pages to collect data
+            const allPagesData = [];
+            for (let i = 0; i < projectData.files.length; i++) {
+                pageIndex = i;
+                const fileData = projectData.files[pageIndex];
+                const panel_data = fileData.panel_data;
+
+
+                // If the page is cached, use the cached data
+                if (pageCache[fileData.path]) {
+                    await gracefullyLoadFromCache(pageCache[fileData.path]);
+                } else {
+                    await displayImage();
+                }
+
+                const imageContainer = document.getElementById('imageContainer');
+                const panelContainers = imageContainer.querySelectorAll('.panel-container');
+
+                panelContainers.forEach((panelContainer, index) => {
+                    const panelDescription = panelContainer.querySelector('.panel-description');
+                    const panelImage = panelContainer.querySelector('.panel-image');
+                    panel_data[index].phrases = [];
+                    panel_data[index].bboxes = [];
+                    panel_data[index].type = [];
+                    panel_data[index].description = panelDescription.textContent;
+
+                    // select all
+                    const spans = panelDescription.querySelectorAll('span[data-start][data-end]');
+                    spans.forEach(span => {
+                        const start = parseInt(span.getAttribute('data-start'));
+                        const end = parseInt(span.getAttribute('data-end'));
+                        const uuid = span.getAttribute('data-uuid');
+                        let bboxes = [];
+                        if (span.classList.contains('highlight')) {
+                            const boundingBoxList = highlightBoxPairs[uuid]?.box;
+                            if (boundingBoxList) {
+                                boundingBoxList.querySelectorAll('.bounding-box').forEach(boundingBox => {
+                                    bboxes.push([
+                                        parseFloat(boundingBox.dataset.x),
+                                        parseFloat(boundingBox.dataset.y),
+                                        parseFloat(boundingBox.dataset.width),
+                                        parseFloat(boundingBox.dataset.height)
+                                    ]);
+                                });
+                            }
+                        } else if (span.classList.contains('characterSpan')) {
+                            const boundingBoxList = panelContainer.querySelector(`.character-box-list[data-uuid="${uuid}"]`);
+                            if (boundingBoxList) {
+                                bboxes = span.dataset.bboxes.split(';').map(bbox => bbox.split(',').map(Number));
+                            }   
+                        }                         
+
+                        panel_data[index].phrases.push([start, end]);
+                        panel_data[index].bboxes.push(bboxes.length > 0 ? bboxes : null);
+                        let type = "manual_phrase";
+                        if (span.classList.contains('potentialHighlightSpan')) {
+                            type = "suggested_phrase";
+                        } else if (span.classList.contains('characterSpan')) {
+                            type = "character";
+                        }
+                        panel_data[index].type.push(type);
+
+
+                        // Load suggestion if exists
+                        if (panelContainer.dataset.suggestion) {
+                            panel_data[index].suggestion = panelContainer.dataset.suggestion;
+                        }
+                    });
+                });
+
+                allPagesData.push({ path: fileData.path, panel_data });
+            }
+
+            projectData.files = allPagesData;
+
+            var spid = projectData['project']['shared_fid'];
+            var rev = projectData['project']['shared_rev'];
+            shared_project_push(spid, rev).then(function(response_str) {
+                var response = JSON.parse(response_str);
+                if (response.hasOwnProperty('shared_fid') &&
+                    response.hasOwnProperty('shared_rev') &&
+                    response.hasOwnProperty('shared_rev_timestamp')
+                ) {
+                    projectData['project']['shared_fid'] = response['shared_fid'];
+                    projectData['project']['shared_rev'] = response['shared_rev'];
+                    projectData['project']['shared_rev_timestamp'] = response['shared_rev_timestamp'];
+                    alert('Project has been saved successfully.');
+
+                    // Return to the original page
+                    pageIndex = currentPageIndex;
+                    displayImage();
+                    updateNavigationButtons();
+                } else {
+                    alert('Failed to save project. Contact Ragav and say "Malformed response from server: "' + response_str);
+                }
+            }, function(err) {
+                alert('Failed to save project. Contact Ragav and say "Error: failed to save [' + err + ']"');
+                
+                // Return to the original page even if there's an error
+                pageIndex = currentPageIndex;
+                displayImage();
+                updateNavigationButtons();
+            });
+        }
+
+    </script>
+</body>
+</html>
