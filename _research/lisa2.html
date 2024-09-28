@@ -254,7 +254,7 @@
                 zipped.sort((a, b) => b.phrase[0] - a.phrase[0]); // Sort by start index in descending order
                 zipped.forEach(({phrase: [start, end], bboxes, type}) => {
                     const phrase = descriptionHTML.substring(start, end);
-                    if (type === "suggested_phrase" && bboxes!==null && bboxes.every(bbox => bbox !== null)) {
+                    if ((type === "suggested_phrase" || type === "character") && bboxes!==null && bboxes.every(bbox => bbox !== null)) {
                         const uuid = crypto.randomUUID();
                         const highlightColor = highlightColors[currentHighlightIndex % highlightColors.length].replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/, 'rgba($1, $2, $3, 0.5)');;
                         currentHighlightIndex++;    
